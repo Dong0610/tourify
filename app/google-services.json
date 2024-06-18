@@ -1,0 +1,77 @@
+{
+  "project_info": {
+    "project_number": "1013836252299",
+    "firebase_url": "https://travelapp-datn-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "travelapp-datn",
+    "storage_bucket": "travelapp-datn.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1013836252299:android:8bc7d9ca01b8c7357f008e",
+        "android_client_info": {
+          "package_name": "dong.datn.tourify"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1013836252299-d0se5mdjiidqs1i097kgtrg09qnh697h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBFQcaVskUmp9cSfMUmzHFMuyrLbYhRZls"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1013836252299-d0se5mdjiidqs1i097kgtrg09qnh697h.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1013836252299:android:1d234c2090bd39c87f008e",
+        "android_client_info": {
+          "package_name": "dong.duan.travelapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1013836252299-jbhkvkgq48tegi75bioki672is233l2a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "dong.duan.travelapp",
+            "certificate_hash": "8a46d2621caef34cd3bd727007083889c937d0ab"
+          }
+        },
+        {
+          "client_id": "1013836252299-d0se5mdjiidqs1i097kgtrg09qnh697h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBFQcaVskUmp9cSfMUmzHFMuyrLbYhRZls"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1013836252299-d0se5mdjiidqs1i097kgtrg09qnh697h.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

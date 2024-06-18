@@ -1,0 +1,150 @@
+<resources>
+    <string name="app_name">Tourify</string>
+
+    <string name="language_english" translatable="false">English</string>
+    <string name="language_spain" translatable="false">Spanish</string>
+    <string name="language_portugal" translatable="false">Portuguese</string>
+    <string name="language_vietnam" translatable="false">Vietnamese</string>
+    <string name="language_hindi" translatable="false">Hindi</string>
+    <string name="language_germany" translatable="false">German</string>
+    <string name="language_brazil" translatable="false">Lingua Brasilia</string>
+    <string name="language_japan" translatable="false">Japanese</string>
+    <string name="language_korean" translatable="false">Korean</string>
+    <string name="language_france" translatable="false">French</string>
+    <string name="language_china" translatable="false">China</string>
+    <string name="language_indonesia" translatable="false">Indonesian</string>
+    <string name="sign_in">Sign in now</string>
+    <string name="signin_to_continue">Please sign in to continue our app</string>
+    <string name="forget_pass">Forget password</string>
+
+    <string name="prompt_email">Email</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in">Sign in or register</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="welcome">"Welcome!"</string>
+    <string name="invalid_username">Not a valid username</string>
+    <string name="invalid_password">Password must be >5 characters</string>
+    <string name="login_failed">"Login failed"</string>
+    <string name="it_s_a_big_world_out_there_go_explore">It’s a big world out</string>
+    <string name="check_your_email">Check your email</string>
+    <string name="we_have_send_password_recovery_instruction_to_your_email">We have send password recovery instruction to your email</string>
+    <string name="verify_your_password">Verify your password</string>
+    <string name="enter_new_password">Enter new password</string>
+    <string name="create_new_password">Create new password</string>
+    <string name="enter_your_new_password_to_loggin_app">Enter your new password to loggin app</string>
+    <string name="verify">Verify</string>
+    <string name="reset_password">Reset password</string>
+    <string name="enter_your_email_account_to_reset_your_password">Enter your email account to reset your password</string>
+    <string name="forgot_password">Forgot password</string>
+    <string name="confirm">Confirm</string>
+    <string name="success">Success</string>
+    <string name="back_to_login">Back to login</string>
+    <string name="wellcome_back">Wellcome back</string>
+    <string name="home">Home</string>
+    <string name="booking">Bookings</string>
+    <string name="discover">Discover</string>
+    <string name="profile">Profile</string>
+    <string name="favorite">Favorite</string>
+    <string name="search">Search</string>
+    <string name="category">Category</string>
+    <string name="str_ct_bus">Bus</string>
+    <string name="str_ct_car">Car</string>
+    <string name="str_ct_hotle">Hotel</string>
+    <string name="str_ct_ship">Ship</string>
+    <string name="str_ct_plane">Plane</string>
+    <string name="str_ct_train">Train</string>
+    <string name="special_offer">Special offers</string>
+    <string name="view_all">View all</string>
+    <string name="trending_destinations">Trending Destinations</string>
+    <string name="top_international">Top International</string>
+    <string name="upcomming">UpComing</string>
+    <string name="completed">Completed</string>
+    <string name="cancelled">Cancelled</string>
+    <string name="all_favorite">All</string>
+    <string name="place_favorite">Place</string>
+    <string name="hotel_favorite">Hotel</string>
+    <string name="attraction_favorite">Attraction</string>
+    <string name="your_profile">Your profile</string>
+    <string name="notification">Notification</string>
+    <string name="facebook_app_id">789868463281354</string>
+    <string name="facebook_client_token">jBpvJfokcHyUC8TXVBpHxJi/PM8=</string>
+    <string name="email_exist">Email has been used for other accounts</string>
+    <string name="empty_field">Please fill in all fields</string>
+    <string name="email_already_exists">Email already exists</string>
+    <string name="signup_success">Successful account registration</string>
+    <string name="user_not_found">Invalid email or password</string>
+    <string name="login_success">Sign-in successful</string>
+    <string name="sign_in_now">Sign in now</string>
+    <string name="please_sign_in_to_continue_our_app">Please sign in to continue our app</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="forget_password">Forget password</string>
+    <string name="don_t_have_an_account">Don’t have an account?</string>
+    <string name="sign_up">Sign up</string>
+    <string name="or_connect">Or connect</string>
+    <string name="authentication_failed">Authentication failed.</string>
+    <string name="you_have_not_logged_in">You have not logged in any account. Please login to continue</string>
+    <string name="default_web_client_id">1013836252299-jbhkvkgq48tegi75bioki672is233l2a.apps.googleusercontent.com</string>
+    <string name="user_name">User name</string>
+    <string name="update_profile">Update profile</string>
+    <string name="chat">Chat</string>
+    <string name="payment_medthod">Payment medthod</string>
+    <string name="setting">Setting</string>
+    <string name="change_password">Change password</string>
+    <string name="security">Security</string>
+    <string name="update_success">Update data successfully</string>
+    <string name="phone_number">Phone number</string>
+    <string name="address">Address</string>
+    <string name="province">Province</string>
+    <string name="district">District</string>
+    <string name="ward_commune">Ward/commune</string>
+    <string name="save">Save</string>
+    <string name="error_get_province">Can\'t not connect to server now!</string>
+    <string name="update_fail">Error in the data update process!</string>
+    <string name="cancel">Cancel</string>
+    <string name="sign_out">Are you sure you want to sign out?</string>
+    <string name="price">Price: </string>
+    <string name="review_tour">Tour du lịch Hải Tiến - Thanh Hóa Giá Rẻ ✅ Review lịch trình, chi phí tour Hải Tiến 3 ngày 2 đêm và 2 ngày 1 đêm từ Hà Nội, theo yêu cầu ✅ Chia sẻ kinh nghiệm đi du lịch biển Hải Tiến Cập Nhật.</string>
+    <string name="count">Count</string>
+    <string name="schedule">Schedule</string>
+    <string name="review">Review</string>
+    <string name="service">Service</string>
+    <string name="cancel_tour_in_advance_14h">Cancel tour in advance 14h</string>
+    <string name="_14h_22_05_2024">14h 22/05/2024</string>
+    <string name="adult">Adult</string>
+    <string name="children">Children</string>
+    <string name="total_price">Total price</string>
+    <string name="detail">Detail</string>
+    <string name="tour">Tour:</string>
+    <string name="time">Time</string>
+    <string name="vehicle">Vehicle</string>
+    <string name="service_includes">Service includes</string>
+    <string name="vehicle_ts">• Vehicle</string>
+    <string name="other_services">Other services</string>
+    <string name="accommodation">Accommodation</string>
+    <string name="catering">Catering</string>
+    <string name="detailed_schedule">Detailed schedule</string>
+    <string name="notes">Notes</string>
+    <string name="no_tour_has_been_added_to_the_favorite_list">No tour has been added to the favorite list</string>
+    <string name="booking_now">Booking now</string>
+    <string name="select_time_and_quantity">Select time and quantity</string>
+    <string name="note">Note...</string>
+    <string name="start">Start: </string>
+    <string name="end">end: </string>
+    <string name="cf_booking">Are you sure to book this tour?</string>
+    <string name="cancel_before">       If you change the decision you need to cancel before</string>
+    <string name="cancel_before_message">to be refunded the deposit. After the cancellation, you can refund 90% of the deposit</string>
+    <string name="not_select_time">You have not chosen the starting time!</string>
+    <string name="not_select_adult">You have not yet chosen the number of adults!</string>
+    <string name="create_order_success">Your tour was created</string>
+    <string name="chart">Chart</string>
+    <string name="staff">Staff</string>
+    <string name="customer">Customer</string>
+    <string name="admin">Admin</string>
+    <string name="total_number_of_tours">Total tours</string>
+    <string name="order_waiting_for_processing">Order waiting for processing</string>
+    <string name="tours_are_placed">Total tours</string>
+    <string name="process">Process</string>
+    <string name="sign_up_now">Sign up now</string>
+    <string name="fill_all_value">Please fill the details and create account</string>
+</resources>
