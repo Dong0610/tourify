@@ -1,22 +1,30 @@
 package dong.duan.livechat.widget
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,6 +42,7 @@ import dong.datn.tourify.ui.theme.darkGray
 import dong.datn.tourify.ui.theme.lightGrey
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.whiteSmoke
+import dong.datn.tourify.widget.onClick
 
 @Composable
 fun CustomTextField(
@@ -134,5 +143,68 @@ fun InputValue(
                 }
             }
         )
+    }
+}
+
+
+@Composable
+fun SearchBox(
+    onTouch: (String) -> Unit
+) {
+    val context = LocalContext.current
+
+
+
+    val valueSearch = remember { mutableStateOf(TextFieldValue("")) }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = if (currentTheme == 1) whiteSmoke else lightGrey,
+                shape = RoundedCornerShape(12.dp)
+            ),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        BasicTextField(
+            value = valueSearch.value.text,
+            onValueChange = { valueSearch.value=TextFieldValue(it)},
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 8.dp)
+                .background(Color.Transparent),
+            textStyle = TextStyle(
+                color = textColor(context),
+                fontSize = 16.sp,
+                fontFamily = FontFamily(Font(R.font.poppins_medium))
+            ),
+            maxLines = 1,
+            keyboardOptions = KeyboardOptions.Default.copy(
+                keyboardType = KeyboardType.Text
+            ),
+            decorationBox = { innerTextField ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp), contentAlignment = Alignment.CenterStart
+                ) {
+                    if (valueSearch.value.text.isEmpty()) {
+                        Text(
+                            text = context.getString(R.string.search),
+                            style = TextStyle(
+                                color = darkGray,
+                                fontSize = 16.sp,
+                                fontFamily = FontFamily(Font(R.font.poppins_regular))
+                            )
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+        )
+        Image(imageVector = Icons.Rounded.Search, contentDescription = "Search", Modifier.onClick {
+            onTouch.invoke(valueSearch.value.text)
+        })
+        Spacer(modifier = Modifier.width(12.dp))
     }
 }

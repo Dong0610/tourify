@@ -2,9 +2,11 @@ package dong.datn.tourify.widget
 
 import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,8 +14,10 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -24,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -35,9 +40,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -49,6 +56,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import dong.datn.tourify.R
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.ui.theme.black
@@ -88,7 +97,26 @@ fun ViewParent(
 }
 
 @Composable
-fun ScrollView(content: @Composable BoxScope.() -> Unit) {
+fun HorScrollView(content: @Composable BoxScope.() -> Unit) {
+
+    val scrollState = rememberScrollState()
+    val coroutineScope = rememberCoroutineScope()
+    val keyboardHeight = WindowInsets.ime.getBottom(LocalDensity.current)
+
+    LaunchedEffect(key1 = keyboardHeight) {
+        coroutineScope.launch {
+            scrollState.scrollBy(keyboardHeight.toFloat())
+        }
+    }
+    Box(Modifier.horizontalScroll(scrollState)) {
+        Row {
+            content
+        }
+    }
+}
+
+@Composable
+fun VerScrollView(content: @Composable BoxScope.() -> Unit) {
 
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
@@ -243,3 +271,110 @@ fun Modifier.onClick(onClick: () -> Unit): Modifier = composed {
         onClick = onClick
     )
 }
+
+@Composable
+
+fun RoundedImage(
+    data: Any? = null,
+    modifier: Modifier = Modifier,
+    contentScale: ContentScale = ContentScale.Crop,
+    rounded: Int = 12
+) {
+
+    val painter = rememberAsyncImagePainter(
+        ImageRequest.Builder(LocalContext.current).data(data = data)
+            .apply(block = fun ImageRequest.Builder.() {
+                allowHardware(false)
+            }).build()
+    )
+
+    Card(
+        shape = RoundedCornerShape(rounded), modifier = modifier.alpha(
+            1f
+        )
+    ) {
+        Image(
+            painter = painter,
+            contentDescription = "...",
+            contentScale = contentScale,
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+        )
+    }
+}
+
+@Composable
+fun DotIndicator(count: Int = 3, current: Int = 0) {
+    val activeDotSize = 16.dp
+    val inactiveDotSize = 8.dp
+    val activeDotColor = Color.Blue
+    val inactiveDotColor = Color.Gray
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(16.dp)
+    ) {
+        for (i in 0 until count) {
+            Box(
+                modifier = Modifier
+                    .width(if (i == current) activeDotSize else inactiveDotSize)
+                    .height(inactiveDotSize)
+                    .background(
+                        color = if (i == current) activeDotColor else inactiveDotColor,
+                        shape = CircleShape
+                    )
+            )
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

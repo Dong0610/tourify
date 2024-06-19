@@ -26,8 +26,8 @@ import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.utils.heightPercent
 import dong.datn.tourify.widget.AppButton
+import dong.datn.tourify.widget.HorScrollView
 import dong.datn.tourify.widget.IconView
-import dong.datn.tourify.widget.ScrollView
 import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.ViewParent
 import dong.duan.ecommerce.library.showToast
@@ -61,7 +61,8 @@ fun SignInScreen(navController: NavHostController, viewModels: AppViewModel) {
                 }
             }
 
-            ScrollView {
+            HorScrollView {
+
                 Column() {
 
 

@@ -1,75 +1,90 @@
-package dong.datn.tourify.widget//package dong.datn.tourify.utils
-//
-//import androidx.compose.foundation.Image
-//import androidx.compose.foundation.background
-//import androidx.compose.foundation.clickable
-//import androidx.compose.foundation.layout.Column
-//import androidx.compose.foundation.layout.Row
-//import androidx.compose.foundation.layout.fillMaxSize
-//import androidx.compose.foundation.layout.fillMaxWidth
-//import androidx.compose.foundation.layout.padding
-//import androidx.compose.foundation.layout.size
-//import androidx.compose.material3.Divider
-//import androidx.compose.runtime.Composable
-//import androidx.compose.ui.Modifier
-//import androidx.compose.ui.draw.alpha
-//import androidx.compose.ui.graphics.Color
-//import androidx.compose.ui.graphics.ColorFilter
-//import androidx.compose.ui.res.painterResource
-//import androidx.compose.ui.unit.dp
-//import androidx.navigation.NavController
-//import dong.datn.tourify.utils.NavigateTo
-//
-//enum class BottomNavigtionItem(var icon: Int, var screen: AccountScreen) {
-//    CHATLIST(R.drawable.ic_messenger, AccountScreen.ListChat),
-//    HOMES(R.drawable.ic_homes,AccountScreen.Home),
-//    FRIEND(R.drawable.ic_users, AccountScreen.Friend),
-//    PROFILE(R.drawable.user_solid, AccountScreen.Profile)
-//}
-//
-//@Composable
-//fun BottomNavigation(
-//    select: BottomNavigtionItem,
-//    navController: NavController?,
-//    modifier: Modifier = Modifier
-//) {
-//    val gradientColors = listOf(Color(0xFF02FF9A), Color(0xFF0622BD))
-//
-//    Column(
-//        modifier = modifier
-//            .fillMaxWidth()
-//
-//    ) {
-//        Divider(
-//            color = Color.LightGray,
-//            thickness = 1.dp,
-//            modifier = Modifier
-//                .alpha(0.3f)
-//                .fillMaxWidth()
-//        )
-//        Row(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .background(WHITE)
-//
-//        ) {
-//            for (item in BottomNavigtionItem.entries) {
-//
-//                Image(
-//                    painter = painterResource(id = item.icon),
-//                    contentDescription = null,
-//                    modifier = Modifier
-//                        .size(40.dp)
-//                        .padding(top = 6.dp, bottom = 4.dp)
-//                        .weight(1f)
-//                        .clickable {
-//                            NavigateTo(navController!!, item.screen.route)
-//                        },
-//                    colorFilter = if (item == select) ColorFilter.lighting(Color(0xFF02FF9A), Color(0xFF0622BD)) else ColorFilter.tint(
-//                        Color.LightGray
-//                    )
-//                )
-//            }
-//        }
-//    }
-//}
+package dong.datn.tourify.widget
+
+import androidx.compose.foundation.background
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavHostController
+import dong.datn.tourify.app.currentTheme
+import dong.datn.tourify.screen.client.ClientScreen
+import dong.datn.tourify.ui.theme.navigationBar
+import dong.datn.tourify.ui.theme.navigationColor
+import dong.datn.tourify.ui.theme.white
+
+enum class BottomNavigationItem(
+    var icon: ImageVector,
+    var screen: String,
+    var title: String
+) {
+    HOMES(Icons.Rounded.Home, ClientScreen.HomeClientScreen.route, "Home"),
+    DISCOVER(Icons.Rounded.Search, ClientScreen.DiscoveryScreen.route, "Discovery"),
+    WISHLIST(Icons.Rounded.Favorite, ClientScreen.WishlistScreen.route, "Favorite"),
+    NOTIFICATION(
+        Icons.Rounded.Notifications,
+        ClientScreen.NotificationScreen.route,
+        "Notifications"
+    ),
+    PROFILE(Icons.Rounded.Person, ClientScreen.ProfileScreen.route, "Profile"),
+}
+
+
+@Composable
+fun BottomNavigationBar(navController: NavHostController) {
+    val navItems = BottomNavigationItem.entries
+    val selectedItem = rememberSaveable { mutableStateOf(0) }
+    val context = LocalContext.current
+
+
+    NavigationBar(
+        modifier = Modifier.background(Color.Blue),
+        containerColor = navigationBar(context),
+        contentColor = white
+    ) {
+        navItems.forEachIndexed { index, item ->
+            NavigationBarItem(
+                alwaysShowLabel = true,
+                icon = { Icon(item.icon, contentDescription = item.title) },
+                label = {
+                    Text(
+                        item.title, maxLines = 1
+                    )
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = navigationColor(selectedItem.value==index),
+                    selectedTextColor = navigationColor(selectedItem.value==index),
+                    indicatorColor = navigationBar(context) ,
+                    unselectedIconColor = navigationColor(selectedItem.value==index),
+                    unselectedTextColor =navigationColor(selectedItem.value==index),
+                    disabledIconColor = Color.Cyan,
+                    disabledTextColor = Color.Cyan,
+                ),
+                selected = selectedItem.value == index,
+                onClick = {
+                    selectedItem.value = index
+                    navController.navigate(item.screen) {
+                        navController.graph.startDestinationRoute?.let { route ->
+                            popUpTo(route) { saveState = true }
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            )
+        }
+    }
+}

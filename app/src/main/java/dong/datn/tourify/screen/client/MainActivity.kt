@@ -7,13 +7,16 @@ import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
 import android.os.Bundle
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,9 +25,13 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -32,14 +39,22 @@ import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.ui.theme.TourifyTheme
 import dong.datn.tourify.ui.theme.black
+import dong.datn.tourify.ui.theme.navigationBar
 import dong.datn.tourify.ui.theme.white
+import dong.datn.tourify.widget.BottomNavigationBar
 import dong.datn.tourify.widget.animComposable
 import kotlinx.coroutines.launch
+import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
+import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEventListener
 import java.io.IOException
 import java.util.Locale
 
 sealed class ClientScreen(var route: String) {
     data object HomeClientScreen : ClientScreen("home_client")
+    data object DiscoveryScreen : ClientScreen("discovery_client")
+    data object WishlistScreen : ClientScreen("wishlist_client")
+    data object NotificationScreen : ClientScreen("notification_client")
+    data object ProfileScreen : ClientScreen("profile_client")
 
 }
 
@@ -77,15 +92,33 @@ open class MainActivity : ComponentActivity() {
         return null
     }
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         currentTheme = 1
         viewModels = ViewModelProvider(this).get(AppViewModel::class.java)
         setContent {
-
+            var isKeyboardVisible = remember { mutableStateOf(false) }
+            KeyboardVisibilityEvent.setEventListener(
+                this,
+                object : KeyboardVisibilityEventListener {
+                    override fun onVisibilityChanged(isOpen: Boolean) {
+                       isKeyboardVisible.value=isOpen
+                    }
+                })
             TourifyTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                val navController = rememberNavController()
+                Scaffold(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(color = navigationBar(applicationContext)),
+
+                    bottomBar = {
+                        if (!isKeyboardVisible.value) {
+                            BottomAppBar { BottomNavigationBar(navController = navController) }
+                        }
+
+                    },
+                ) { innerPadding ->
                     val coroutineScope = rememberCoroutineScope()
                     val country = remember { mutableStateOf<String?>(null) }
                     val permissionGranted = remember { mutableStateOf(false) }
@@ -111,7 +144,7 @@ open class MainActivity : ComponentActivity() {
                             locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                         }
                     }
-                    MainNavigation(innerPadding, country)
+                    MainNavigation(navController, innerPadding, country)
                 }
             }
         }
@@ -120,8 +153,12 @@ open class MainActivity : ComponentActivity() {
     open fun onBack() {}
 
     @Composable
-    fun MainNavigation(innerPadding: PaddingValues, country: MutableState<String?>) {
-        val navController = rememberNavController()
+    fun MainNavigation(
+        navController: NavHostController,
+        innerPadding: PaddingValues,
+        country: MutableState<String?>
+    ) {
+
         val systemUiController = rememberSystemUiController()
         val statusBar = if (currentTheme == 1) white else black
         SideEffect {
@@ -134,11 +171,21 @@ open class MainActivity : ComponentActivity() {
             navController = navController,
             startDestination = ClientScreen.HomeClientScreen.route
         ) {
-            animComposable(ClientScreen.HomeClientScreen.route) {
+            animComposable("home_client") {
                 HomeClientScreen(nav = navController, viewModel = viewModels, country.value)
             }
-
-
+            animComposable("discovery_client") {
+                DiscoverScreen(navController, viewModels)
+            }
+            animComposable(ClientScreen.WishlistScreen.route) {
+                WishListScreen(navController, viewModels)
+            }
+            animComposable(ClientScreen.NotificationScreen.route) {
+                NotificationScreen(navController, viewModels)
+            }
+            animComposable(ClientScreen.ProfileScreen.route) {
+                ProfileScreen(navController, viewModels)
+            }
         }
 
     }

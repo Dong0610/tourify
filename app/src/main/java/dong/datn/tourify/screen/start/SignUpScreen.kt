@@ -28,8 +28,8 @@ import dong.datn.tourify.screen.client.MainActivity
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.utils.heightPercent
 import dong.datn.tourify.widget.AppButton
+import dong.datn.tourify.widget.HorScrollView
 import dong.datn.tourify.widget.IconView
-import dong.datn.tourify.widget.ScrollView
 import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.ViewParent
 import dong.duan.ecommerce.library.showToast
@@ -50,7 +50,7 @@ fun SignUpScreen(nav: NavController, viewModels: AppViewModel) {
             popUpTo(0)
         }
     }) {
-        ScrollView {
+        HorScrollView {
             Column(
                 Modifier
                     .fillMaxSize(1f)

@@ -44,3 +44,20 @@ fun textColor(context: Context): Color {
     }
 }
 
+fun navigationBar(context: Context):Color{
+    return when (currentTheme) {
+        1 -> white
+        -1 -> black
+        else -> appColor
+    }
+}
+
+fun navigationColor(isSelect:Boolean=false):Color{
+    return when (currentTheme) {
+        1 -> if (isSelect) appColor else lightGrey
+        -1 -> if (isSelect) white else lightGrey
+        else -> appColor
+    }
+}
+
+
