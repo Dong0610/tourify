@@ -11,8 +11,8 @@ import com.google.firebase.messaging.messaging
 import com.google.firebase.storage.ktx.storage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dong.datn.tourify.R
+import dong.datn.tourify.utils.USERS
 import dong.duan.ecommerce.library.showToast
-import dong.duan.livechat.utility.KEY_USER
 import dong.duan.travelapp.model.Users
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -31,13 +31,11 @@ class AppViewModel @Inject constructor() : ViewModel() {
     val realtime = Firebase.firestore
     val storage = Firebase.storage
 
-
-    // clients
     fun fogetPassword(text: String) {
 
     }
 
-    fun authSignUp(email: String, password: String, name: String, callback: (Boolean) -> Unit) {
+    fun authSignUp(email: String, password: String, name: String, callback: (Int) -> Unit) {
         val user = Users(
             Email = email,
             Password = password,
@@ -45,7 +43,7 @@ class AppViewModel @Inject constructor() : ViewModel() {
             LoginType = "Account",
             Role = "User"
         )
-        firestore.collection(KEY_USER)
+        firestore.collection(USERS)
             .whereEqualTo("Email", email)
             .get()
             .addOnSuccessListener { documents ->
@@ -53,37 +51,37 @@ class AppViewModel @Inject constructor() : ViewModel() {
                     auth.createUserWithEmailAndPassword(email, password)
                         .addOnSuccessListener {
                             user.UId = it.user!!.uid
-                            firestore.collection(KEY_USER)
+                            firestore.collection(USERS)
                                 .document(user.UId.toString()).set(user)
                                 .addOnSuccessListener {
                                     authSignIn = user
                                     auth.signInWithEmailAndPassword(email, password)
-                                    callback(true)
+                                    callback(1)
                                     showToast(appContext.getString(R.string.signup_success))
                                 }
                                 .addOnFailureListener { e ->
-                                    callback(false)
+                                    callback(-1)
                                     showToast("Failed to save user: ${e.message}")
                                 }
                         }
                         .addOnFailureListener { e ->
-                            callback(false)
+                            callback(-1)
                             showToast("Failed to create user: ${e.message}")
                         }
                 } else {
                     showToast(appContext.getString(R.string.email_already_exists))
-                    callback(false)
+                    callback(-1)
                 }
             }
             .addOnFailureListener { e ->
                 showToast("Error checking email: ${e.message}")
-                callback(false)
+                callback(-1)
             }
     }
 
     fun signInWithEmailPassword(email: String, password: String, onSuccess: (Int) -> Unit) {
 
-        firestore.collection(KEY_USER)
+        firestore.collection(USERS)
             .whereEqualTo("email", email)
             .whereEqualTo("password", password)
             .get()
@@ -113,7 +111,7 @@ class AppViewModel @Inject constructor() : ViewModel() {
             try {
                 withContext(Dispatchers.IO) {
                     com.google.firebase.Firebase.messaging.token.addOnSuccessListener { token ->
-                        com.google.firebase.Firebase.firestore.collection(KEY_USER)
+                        com.google.firebase.Firebase.firestore.collection(USERS)
                             .document(uId)
                             .update("token", token)
                             .addOnSuccessListener {

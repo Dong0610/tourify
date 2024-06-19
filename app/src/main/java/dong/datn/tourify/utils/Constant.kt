@@ -1,7 +1,12 @@
-package dong.duan.livechat.utility
+package dong.datn.tourify.utils
 
-const val KEY_USER="Users"
-const val KEY_CHAT="Chats"
+const val FIRST_OPEN_APP = "FirstOpenApp"
+const val USERS = "USERS"
+
+const val TOUR: String = "TOUR"
+const val SCHEDULE = "SCHEDULE"
+const val SERVICE: String = "SERVICE"
+const val REVIEW: String = "REVIEW"
 
 
 

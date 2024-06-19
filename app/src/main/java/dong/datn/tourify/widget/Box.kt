@@ -42,6 +42,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
@@ -147,9 +149,15 @@ fun TextView(
         fontSize = textSize.sp,
         textAlign = textAlign,
         color = color ?: textColor(context),
+
         fontFamily = FontFamily(
             font ?: Font(
                 R.font.poppins_regular
+            )
+        ),
+        style = TextStyle(
+            platformStyle = PlatformTextStyle(
+                includeFontPadding = false
             )
         ),
         modifier = modifier.clickable(interactionSource, null) {
@@ -160,9 +168,6 @@ fun TextView(
 
 @Composable
 fun AppButton(text: String, modifier: Modifier, isLoading: Int? = null, onClick: () -> Unit) {
-
-    val context = LocalContext.current
-
     Row(
         modifier = modifier
             .fillMaxWidth()

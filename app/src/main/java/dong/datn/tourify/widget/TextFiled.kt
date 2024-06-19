@@ -83,6 +83,7 @@ private val AppTextInputColors: TextFieldColors
 fun InputValue(
     value: String,
     hint: String = "",
+    maxLines: Int=1,
     keyboardType: KeyboardType = KeyboardType.Text,
     onValueChange: (String) -> Unit
 ) {
@@ -109,6 +110,7 @@ fun InputValue(
                 fontSize = 16.sp,
                 fontFamily = FontFamily(Font(R.font.poppins_medium))
             ),
+            maxLines = maxLines,
             keyboardOptions = KeyboardOptions.Default.copy(
                 keyboardType = keyboardType
             ),

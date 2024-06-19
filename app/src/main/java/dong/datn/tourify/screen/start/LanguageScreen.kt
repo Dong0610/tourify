@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
+import dong.datn.tourify.app.authSignIn
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.app.isSetUpLanguage
 import dong.datn.tourify.app.language.Language
@@ -51,13 +52,16 @@ import dong.datn.tourify.widget.ViewParent
 import dong.datn.tourify.widget.onClick
 
 @Composable
-fun LanguageScreen(navController: NavHostController, viewModels: AppViewModel, onBack: () -> Unit) {
+fun LanguageScreen(navController: NavHostController, onBack: () -> Unit) {
     val context = LocalContext.current
 
-    if (isSetUpLanguage) {
+    if (!isSetUpLanguage) {
         navController.navigate(AccountScreen.SignInScreen.route) {
             popUpTo(0)
         }
+    }
+    else if(authSignIn!=null){
+        onBack.invoke()
     }
     else {
 

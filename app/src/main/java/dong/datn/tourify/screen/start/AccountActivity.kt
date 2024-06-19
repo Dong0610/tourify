@@ -1,5 +1,6 @@
 package dong.datn.tourify.screen.start
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,6 +18,7 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
 import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.app.currentTheme
+import dong.datn.tourify.screen.client.MainActivity
 import dong.datn.tourify.ui.theme.TourifyTheme
 import dong.datn.tourify.ui.theme.black
 import dong.datn.tourify.ui.theme.white
@@ -66,8 +68,9 @@ open class AccountActivity : ComponentActivity() {
         ) {
             animComposable(AccountScreen.LanguageScreen.route) {
 
-                LanguageScreen(navController, viewModels) {
-
+                LanguageScreen(navController) {
+                    startActivity(Intent(this@AccountActivity, MainActivity::class.java))
+                    finish()
                 }
             }
             animComposable(AccountScreen.SignUpScreen.route) {

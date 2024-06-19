@@ -2,6 +2,7 @@ package dong.datn.tourify.app
 
 import android.app.Application
 import android.content.Context
+import androidx.lifecycle.ViewModelProvider
 import dagger.hilt.android.HiltAndroidApp
 import dong.duan.travelapp.model.Users
 
@@ -11,6 +12,7 @@ class ContextProvider : Application() {
     companion object {
         lateinit var appContext: Context
             private set
+        lateinit var viewModel: AppViewModel
     }
 
     override fun onCreate() {
