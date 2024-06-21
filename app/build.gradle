@@ -74,8 +74,9 @@ dependencies {
     androidTestImplementation libs.androidx.ui.test.junit4
     debugImplementation libs.androidx.ui.tooling
     debugImplementation libs.androidx.ui.test.manifest
-    implementation "com.google.accompanist:accompanist-systemuicontroller:0.30.1"
-    implementation "androidx.compose.foundation:foundation:1.4.0"
+    implementation  libs.accompanist.systemuicontroller
+    implementation libs.androidx.foundation
+    implementation(libs.accompanist.pager)
 
     implementation("com.google.dagger:hilt-android:2.48")
     ksp("com.google.dagger:hilt-android-compiler:2.48")

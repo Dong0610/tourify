@@ -13,6 +13,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -20,10 +21,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
+import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.screen.client.ClientScreen
 import dong.datn.tourify.ui.theme.navigationBar
 import dong.datn.tourify.ui.theme.navigationColor
+import dong.datn.tourify.ui.theme.thistle
 import dong.datn.tourify.ui.theme.white
 
 enum class BottomNavigationItem(
@@ -44,9 +47,8 @@ enum class BottomNavigationItem(
 
 
 @Composable
-fun BottomNavigationBar(navController: NavHostController) {
+fun BottomNavigationBar(navController: NavHostController,viewModel: AppViewModel) {
     val navItems = BottomNavigationItem.entries
-    val selectedItem = rememberSaveable { mutableStateOf(0) }
     val context = LocalContext.current
 
 
@@ -65,17 +67,17 @@ fun BottomNavigationBar(navController: NavHostController) {
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = navigationColor(selectedItem.value==index),
-                    selectedTextColor = navigationColor(selectedItem.value==index),
+                    selectedIconColor = navigationColor(viewModel.currentIndex.value==index),
+                    selectedTextColor = navigationColor(viewModel.currentIndex.value==index),
                     indicatorColor = navigationBar(context) ,
-                    unselectedIconColor = navigationColor(selectedItem.value==index),
-                    unselectedTextColor =navigationColor(selectedItem.value==index),
+                    unselectedIconColor = navigationColor(viewModel.currentIndex.value==index),
+                    unselectedTextColor =navigationColor(viewModel.currentIndex.value==index),
                     disabledIconColor = Color.Cyan,
                     disabledTextColor = Color.Cyan,
                 ),
-                selected = selectedItem.value == index,
+                selected = viewModel.currentIndex.value == index,
                 onClick = {
-                    selectedItem.value = index
+                    viewModel.currentIndex.value = index
                     navController.navigate(item.screen) {
                         navController.graph.startDestinationRoute?.let { route ->
                             popUpTo(route) { saveState = true }

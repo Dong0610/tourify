@@ -2,6 +2,10 @@ package dong.datn.tourify.app
 
 import android.annotation.SuppressLint
 import android.util.Log
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.firestore
@@ -26,6 +30,13 @@ import javax.inject.Inject
 @SuppressLint("MutableCollectionMutableState")
 @HiltViewModel
 class AppViewModel @Inject constructor() : ViewModel() {
+    var currentIndex = mutableStateOf(0)
+    var isKeyboardVisible = mutableStateOf(false)
+
+
+
+
+
     val firestore = Firebase.firestore
     val auth = Firebase.auth
     val realtime = Firebase.firestore

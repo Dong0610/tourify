@@ -34,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -43,6 +44,7 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -62,9 +64,11 @@ import dong.datn.tourify.R
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.ui.theme.black
 import dong.datn.tourify.ui.theme.darkGray
+import dong.datn.tourify.ui.theme.iconBackground
 import dong.datn.tourify.ui.theme.lightGrey
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.white
+import dong.datn.tourify.ui.theme.whiteSmoke
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -144,7 +148,7 @@ fun IconView(
     val interactionSource = remember { MutableInteractionSource() }
     Box(
         modifier = modifier
-            .background(if (currentTheme == 1) lightGrey else darkGray, shape = CircleShape)
+            .background(if (currentTheme == 1) whiteSmoke else iconBackground, shape = CircleShape)
             .size(40.dp)
             .clickable(interactionSource, null) {
                 onclick?.invoke()
@@ -153,6 +157,63 @@ fun IconView(
     ) {
         Icon(
             imageVector = icon,
+            modifier = Modifier.size(icSize.dp),
+            contentDescription = "Check",
+            tint = tint ?: textColor(context)
+        )
+    }
+}
+
+@Composable
+fun InnerImageIcon(
+    modifier: Modifier,
+    icon: ImageVector,
+    icSize: Int = 32,
+    tint: Color? = null,
+    onclick: (() -> Unit?)? = null
+) {
+    val context = LocalContext.current
+    val interactionSource = remember { MutableInteractionSource() }
+    Box(
+        modifier = modifier
+            .background(Color(0x90FFFFFF), shape = CircleShape)
+            .size(40.dp)
+            .clickable(interactionSource, null) {
+                onclick?.invoke()
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            modifier = Modifier.size(icSize.dp),
+            contentDescription = "Check",
+            tint = tint ?: textColor(context)
+        )
+    }
+}
+
+
+@Composable
+fun IconView(
+    modifier: Modifier,
+    icon: Int,
+    icSize: Int = 32,
+    tint: Color? = null,
+    onclick: (() -> Unit?)? = null
+) {
+    val context = LocalContext.current
+    val interactionSource = remember { MutableInteractionSource() }
+    Box(
+        modifier = modifier
+            .background(if (currentTheme == 1) whiteSmoke else iconBackground, shape = CircleShape)
+            .size(40.dp)
+            .clickable(interactionSource, null) {
+                onclick?.invoke()
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            painter = painterResource(id = icon),
             modifier = Modifier.size(icSize.dp),
             contentDescription = "Check",
             tint = tint ?: textColor(context)
@@ -177,7 +238,6 @@ fun TextView(
         fontSize = textSize.sp,
         textAlign = textAlign,
         color = color ?: textColor(context),
-
         fontFamily = FontFamily(
             font ?: Font(
                 R.font.poppins_regular
@@ -195,7 +255,10 @@ fun TextView(
 }
 
 @Composable
-fun AppButton(text: String, modifier: Modifier, isLoading: Int? = null, onClick: () -> Unit) {
+fun AppButton(text: String, modifier: Modifier, loadding: Int? = null, onClick: () -> Unit) {
+    val isLoading = remember {
+        mutableStateOf(loadding)
+    }
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -210,6 +273,7 @@ fun AppButton(text: String, modifier: Modifier, isLoading: Int? = null, onClick:
             )
             .padding(vertical = 12.dp)
             .onClick {
+                isLoading.value=0
                 onClick.invoke()
             },
         horizontalArrangement = Arrangement.Center,
@@ -224,8 +288,8 @@ fun AppButton(text: String, modifier: Modifier, isLoading: Int? = null, onClick:
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.width(6.dp))
-        if (isLoading != null) {
-            when (isLoading) {
+        if (isLoading.value != null) {
+            when (isLoading.value) {
                 -1 -> {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_round_dangerous),
@@ -273,12 +337,11 @@ fun Modifier.onClick(onClick: () -> Unit): Modifier = composed {
 }
 
 @Composable
-
 fun RoundedImage(
     data: Any? = null,
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
-    rounded: Int = 12
+    shape: Shape = RoundedCornerShape(12),
 ) {
 
     val painter = rememberAsyncImagePainter(
@@ -289,7 +352,7 @@ fun RoundedImage(
     )
 
     Card(
-        shape = RoundedCornerShape(rounded), modifier = modifier.alpha(
+        shape = shape, modifier = modifier.alpha(
             1f
         )
     ) {

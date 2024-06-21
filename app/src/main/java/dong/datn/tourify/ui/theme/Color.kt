@@ -1,6 +1,5 @@
 package dong.datn.tourify.ui.theme
 
-import androidx.annotation.ColorInt
 import androidx.compose.ui.graphics.Color
 import dong.datn.tourify.app.currentTheme
 
@@ -138,6 +137,11 @@ val darkBlue = Color(0xFF00008B)
 val navy = Color(0xFF000080)
 val black = Color(0xFF000000)
 
+val iconBackground = Color(0xFF141414)
+
+
+val selectedColor = if (currentTheme == 1) appColor else white
+val unselectedColor = if (currentTheme == 1) gray else lightGrey
 
 
 

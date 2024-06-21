@@ -34,6 +34,8 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dong.datn.tourify.R
@@ -93,6 +95,7 @@ fun InputValue(
     value: String,
     hint: String = "",
     maxLines: Int=1,
+    textSize: TextUnit =16.sp,
     keyboardType: KeyboardType = KeyboardType.Text,
     onValueChange: (String) -> Unit
 ) {
@@ -116,7 +119,7 @@ fun InputValue(
                 .background(Color.Transparent),
             textStyle = TextStyle(
                 color = textColor(context),
-                fontSize = 16.sp,
+                fontSize = textSize,
                 fontFamily = FontFamily(Font(R.font.poppins_medium))
             ),
             maxLines = maxLines,
@@ -134,7 +137,7 @@ fun InputValue(
                             text = hint,
                             style = TextStyle(
                                 color = darkGray,
-                                fontSize = 14.sp,
+                                fontSize = textSize,
                                 fontFamily = FontFamily(Font(R.font.poppins_regular))
                             )
                         )
@@ -153,15 +156,13 @@ fun SearchBox(
 ) {
     val context = LocalContext.current
 
-
-
     val valueSearch = remember { mutableStateOf(TextFieldValue("")) }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(
                 color = if (currentTheme == 1) whiteSmoke else lightGrey,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(8.dp)
             ),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
@@ -171,7 +172,7 @@ fun SearchBox(
             onValueChange = { valueSearch.value=TextFieldValue(it)},
             modifier = Modifier
                 .weight(1f)
-                .padding(horizontal = 8.dp)
+                .padding(horizontal = 6.dp)
                 .background(Color.Transparent),
             textStyle = TextStyle(
                 color = textColor(context),
@@ -186,7 +187,7 @@ fun SearchBox(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(12.dp), contentAlignment = Alignment.CenterStart
+                        .padding(horizontal = 12.dp, vertical = 10.dp), contentAlignment = Alignment.CenterStart
                 ) {
                     if (valueSearch.value.text.isEmpty()) {
                         Text(

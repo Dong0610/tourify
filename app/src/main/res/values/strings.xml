@@ -55,7 +55,7 @@
     <string name="str_ct_train">Train</string>
     <string name="special_offer">Special offers</string>
     <string name="view_all">View all</string>
-    <string name="trending_destinations">Trending Destinations</string>
+    <string name="top_10_booked">Top 10 most booked tours</string>
     <string name="top_international">Top International</string>
     <string name="upcomming">UpComing</string>
     <string name="completed">Completed</string>
@@ -147,4 +147,11 @@
     <string name="process">Process</string>
     <string name="sign_up_now">Sign up now</string>
     <string name="fill_all_value">Please fill the details and create account</string>
+    <string name="top_5_place">Top 5 most favorite places</string>
+    <string name="birthday">Birthday</string>
+    <string name="male">Male</string>
+    <string name="fe_male">Female</string>
+    <string name="undisclosed">Undisclosed</string>
+    <string name="sex">Sex</string>
+    <string name="notification_post">Post notification</string>
 </resources>

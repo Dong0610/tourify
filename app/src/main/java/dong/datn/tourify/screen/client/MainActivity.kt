@@ -7,7 +7,6 @@ import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
 import android.os.Bundle
-import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -25,10 +24,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.LocalView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavHostController
@@ -41,8 +37,10 @@ import dong.datn.tourify.ui.theme.TourifyTheme
 import dong.datn.tourify.ui.theme.black
 import dong.datn.tourify.ui.theme.navigationBar
 import dong.datn.tourify.ui.theme.white
+import dong.datn.tourify.utils.changeTheme
 import dong.datn.tourify.widget.BottomNavigationBar
 import dong.datn.tourify.widget.animComposable
+import dong.duan.ecommerce.library.showToast
 import kotlinx.coroutines.launch
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEventListener
@@ -55,6 +53,9 @@ sealed class ClientScreen(var route: String) {
     data object WishlistScreen : ClientScreen("wishlist_client")
     data object NotificationScreen : ClientScreen("notification_client")
     data object ProfileScreen : ClientScreen("profile_client")
+    data object UpdateProfileScreen : ClientScreen("update_profile_client")
+    data object SettingScreen : ClientScreen("setting_client")
+    data object BookingScreen : ClientScreen("booking_client")
 
 }
 
@@ -94,27 +95,34 @@ open class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        currentTheme = 1
         viewModels = ViewModelProvider(this).get(AppViewModel::class.java)
+        changeTheme(currentTheme,applicationContext)
         setContent {
-            var isKeyboardVisible = remember { mutableStateOf(false) }
+
             KeyboardVisibilityEvent.setEventListener(
                 this,
                 object : KeyboardVisibilityEventListener {
                     override fun onVisibilityChanged(isOpen: Boolean) {
-                       isKeyboardVisible.value=isOpen
+                        viewModels.isKeyboardVisible.value = isOpen
                     }
                 })
+
             TourifyTheme {
                 val navController = rememberNavController()
+
                 Scaffold(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(color = navigationBar(applicationContext)),
 
                     bottomBar = {
-                        if (!isKeyboardVisible.value) {
-                            BottomAppBar { BottomNavigationBar(navController = navController) }
+                        if (!viewModels.isKeyboardVisible.value) {
+                            BottomAppBar (containerColor = navigationBar(applicationContext)) {
+                                BottomNavigationBar(
+                                    navController = navController,
+                                    viewModels
+                                )
+                            }
                         }
 
                     },
@@ -185,6 +193,15 @@ open class MainActivity : ComponentActivity() {
             }
             animComposable(ClientScreen.ProfileScreen.route) {
                 ProfileScreen(navController, viewModels)
+            }
+            animComposable(ClientScreen.UpdateProfileScreen.route) {
+                UpdateProfileScreen(navController, viewModels)
+            }
+            animComposable(ClientScreen.SettingScreen.route) {
+                SettingScreen(navController, viewModels)
+            }
+            animComposable(ClientScreen.BookingScreen.route) {
+                BookingScreen(navController, viewModels)
             }
         }
 

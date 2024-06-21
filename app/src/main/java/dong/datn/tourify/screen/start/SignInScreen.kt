@@ -63,9 +63,7 @@ fun SignInScreen(navController: NavHostController, viewModels: AppViewModel) {
 
             HorScrollView {
 
-                Column() {
-
-
+                Column {
                     Spacer(modifier = Modifier.heightPercent(15f))
                     Row(
                         Modifier.fillMaxWidth(1f), horizontalArrangement = Arrangement.Center

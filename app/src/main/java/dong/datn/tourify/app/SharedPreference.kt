@@ -75,6 +75,10 @@ var firstStartApp: Boolean
 var appLanguageCode: String
     get() = sharedPreferences.getString("appLanguageCode", "en")!!
     set(value) = sharedPreferences.putString("appLanguageCode", value)
+var isPostNotification: Boolean
+    get() = sharedPreferences.getBollean("postNotification", false)
+    set(value) = sharedPreferences.putBollean("postNotification", value)
+
 var isChooseUiTheme: Boolean
     get() = sharedPreferences.getBollean("isChooseUiTheme", false)
     set(value) = sharedPreferences.putBollean("isChooseUiTheme", value)

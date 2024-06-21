@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dong.datn.tourify.app.currentTheme
@@ -72,7 +73,11 @@ fun Int.toDp(): Dp {
 fun Float.toDp(): Dp {
     return (this / LocalContext.current.resources.displayMetrics.density).dp
 }
-
+@Composable
+fun dpToInt(dp: Dp): Int {
+    val density = LocalDensity.current
+    return with(density) { dp.toPx().toInt() }
+}
 
 fun Modifier.heightPercent(percent: Float): Modifier = composed {
     val screenHeight = getScreenHeight()
