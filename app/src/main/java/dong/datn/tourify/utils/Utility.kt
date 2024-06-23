@@ -58,12 +58,7 @@ import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.ui.theme.white
 import dong.duan.livechat.widget.GradientProgressIndicator
 
-fun NavigateTo(navController: NavController, router: String) {
-    navController.navigate(router) {
-        popUpTo(router)
-        launchSingleTop = true
-    }
-}
+
 
 @Composable
 fun CommonProgressBar(speed: Int = 1000) {
@@ -126,24 +121,7 @@ fun CommonDivider(modifier: Modifier = Modifier) {
     )
 }
 
-@Composable
-fun ListChatItem(imgUrl: String? = "", name: String? = "", onItemClick: () -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .height(75.dp)
-            .clickable { onItemClick.invoke() }) {
-        CommonImage(
-            data = imgUrl,
-            Modifier
-                .width(75.dp)
-                .height(75.dp)
-                .padding(3.dp),
-            contentScale = ContentScale.Crop
-        )
-        Text(text = name ?: "Error")
-    }
-}
+
 
 @Composable
 fun CommonImage(
@@ -173,108 +151,11 @@ fun CommonImage(
     }
 }
 
-@SuppressLint("UnrememberedMutableState")
-@Composable
-fun CustomTextField() {
-    var name by remember { mutableStateOf(TextFieldValue("")) }
-    Row(
-        Modifier
-            .height(48.dp)
-            .padding(10.dp)
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(40.dp),
-            border = BorderStroke(1.dp, Color.LightGray),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Row(Modifier.background(white)) {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .size(24.dp)
-                )
-                BasicTextField(
-                    value = name,
-                    keyboardOptions = KeyboardOptions.Default,
-                    onValueChange = { name = it },
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(8.dp),
-                    textStyle = TextStyle(
-                        fontSize = 18.sp
-                    )
-                )
-                Box(
-                    Modifier
-                        .padding(vertical = 2.dp)
-                        .width(1.dp)
-                )
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .size(24.dp)
-                )
-            }
-        }
-    }
-}
 
-
-@Composable
-fun DotsFlashing(dotSize: Dp = 18.dp, color: Color = Color.Blue, delayUnit: Int = 750) {
-    val minAlpha = 0.1f
-
-    @Composable
-    fun Dot(
-        alpha: Float
-    ) = Spacer(
-        Modifier
-            .size(dotSize)
-            .alpha(alpha)
-            .background(
-                color = color, shape = CircleShape
-            )
+fun Color.opacity(alpha: Float):Color{
+    return this.copy(
+        alpha = alpha
     )
-
-    val infiniteTransition = rememberInfiniteTransition()
-
-    @Composable
-    fun animateAlphaWithDelay(delay: Int) = infiniteTransition.animateFloat(
-        initialValue = minAlpha,
-        targetValue = minAlpha,
-        animationSpec = infiniteRepeatable(animation = keyframes {
-            durationMillis = delayUnit * 4
-            minAlpha at delay with LinearEasing
-            1f at delay + delayUnit with LinearEasing
-            minAlpha at delay + delayUnit * 2
-        }),
-        label = ""
-    )
-
-    val alpha1 by animateAlphaWithDelay(0)
-    val alpha2 by animateAlphaWithDelay(delayUnit)
-    val alpha3 by animateAlphaWithDelay(delayUnit * 2)
-    val alpha4 by animateAlphaWithDelay(delayUnit * 3)
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
-    ) {
-        val spaceSize = 12.dp
-
-        Dot(alpha1)
-        Spacer(Modifier.width(spaceSize))
-        Dot(alpha2)
-        Spacer(Modifier.width(spaceSize))
-        Dot(alpha3)
-        Spacer(Modifier.width(spaceSize))
-        Dot(alpha4)
-    }
 }
 
 

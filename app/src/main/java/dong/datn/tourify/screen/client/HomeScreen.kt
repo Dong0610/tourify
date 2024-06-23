@@ -1,6 +1,6 @@
 package dong.datn.tourify.screen.client
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -32,7 +30,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
@@ -41,14 +40,19 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.rememberPagerState
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
+import dong.datn.tourify.app.appViewModels
 import dong.datn.tourify.app.authSignIn
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.model.Places
 import dong.datn.tourify.model.getListPlaces
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.darkGray
+import dong.datn.tourify.ui.theme.gray
 import dong.datn.tourify.ui.theme.iconBackground
 import dong.datn.tourify.ui.theme.lightGrey
 import dong.datn.tourify.ui.theme.textColor
@@ -63,19 +67,29 @@ import dong.datn.tourify.widget.RoundedImage
 import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.VerScrollView
 import dong.datn.tourify.widget.ViewParent
+import dong.datn.tourify.widget.navigationTo
 import dong.datn.tourify.widget.onClick
 import dong.duan.ecommerce.library.showToast
 import dong.duan.livechat.widget.SearchBox
+import dong.duan.travelapp.model.Tour
 
-@OptIn(ExperimentalFoundationApi::class)
+@SuppressLint("MutableCollectionMutableState")
+@OptIn(ExperimentalPagerApi::class)
 @Composable
 fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: String? = null) {
     val context = LocalContext.current
     val places = getListPlaces()
+    viewModel.isKeyboardVisible.value = false
+    val listPlaces = remember {
+        mutableStateOf<MutableList<Places>?>(null)
+    }
     val listImage =
         listOf(R.drawable.img_test_data_1, R.drawable.img_test_data_2, R.drawable.img_test_data_3)
     val indexSlideImage = remember {
         mutableStateOf(1)
+    }
+    viewModel.getAllPlaces {
+        listPlaces.value = it
     }
     ViewParent {
         Column {
@@ -127,6 +141,14 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
                     .height(1.dp)
                     .background(color = Color(0xFFdddddd), shape = RectangleShape)
             )
+
+            val pagerState = rememberPagerState(
+                pageCount = listImage.size,
+                initialOffscreenLimit = 2,
+                infiniteLoop = true,
+                initialPage = 0,
+            )
+
             VerScrollView {
                 Column {
                     Spacer(modifier = Modifier.height(12.dp))
@@ -146,10 +168,7 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
                             .padding(horizontal = 16.dp)
                     ) {
 
-                        val pagerState = rememberPagerState(pageCount = {
-                            listImage.size
-                        })
-                        HorizontalPager(state = pagerState) { page ->
+                        HorizontalPager(modifier = Modifier, state = pagerState) { page ->
                             RoundedImage(
                                 listImage.get(page),
                                 contentScale = ContentScale.Crop,
@@ -160,7 +179,7 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
                         }
                     }
                     Row(Modifier.fillMaxWidth(1f), horizontalArrangement = Arrangement.Center) {
-                        DotIndicator(listImage.size, indexSlideImage.value)
+                        DotIndicator(pagerState)
                     }
 
                     Row(
@@ -206,8 +225,19 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
                             .heightPercent(28f)
                     ) {
                         LazyRow {
-                            items(listImage.size + 4) {
-                                ItemTopBucketTour()
+                            items(viewModel.listTour.value, key = {
+                                it.tourID.toString()
+                            }) {
+                                ItemTopBucketTour(it) {
+                                    viewModel.detailTour.value = it
+                                    nav.navigate(ClientScreen.DetailTourScreen.route) {
+                                        nav.graph.startDestinationRoute?.let { route ->
+                                            popUpTo(route) { saveState = true }
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
                             }
                         }
                     }
@@ -226,14 +256,20 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
                             .heightPercent(20f)
                     ) {
                         LazyRow(state = rememberLazyListState()) {
-                            items(places) {
-                                ItemTopPlace(
-                                    it,
-                                    Modifier
-                                        .widthPercent(45f)
-                                        .heightPercent(18f)
-                                )
+                            if (listPlaces.value != null) {
+                                items(listPlaces.value!!) {
+                                    ItemTopPlace(
+                                        it,
+                                        Modifier
+                                            .widthPercent(45f)
+                                            .heightPercent(18f)
+                                    ) { plc ->
+                                        nav.navigationTo(ClientScreen.DetailPlaceScreen.route)
+                                        appViewModels?.detailPlace!!.value = plc
+                                    }
+                                }
                             }
+
                         }
                     }
 
@@ -249,8 +285,12 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
                             .heightPercent(28f)
                     ) {
                         LazyRow {
-                            items(listImage.size + 4) {
-                                ItemTopBucketTour()
+                            items(viewModel.listTour.value, key = {
+                                it.tourID.toString()
+                            }) {
+                                ItemTopBucketTour(it) {
+
+                                }
                             }
                         }
                     }
@@ -268,7 +308,7 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
 }
 
 @Composable
-fun ItemTopPlace(items: Places, modifier: Modifier) {
+fun ItemTopPlace(items: Places, modifier: Modifier, onSelect: (Places) -> Unit) {
     Box(
         modifier = modifier.border(
             width = 1.dp,
@@ -276,7 +316,7 @@ fun ItemTopPlace(items: Places, modifier: Modifier) {
             shape = RoundedCornerShape(12.dp)
         )
     ) {
-        RoundedImage(items.Image, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+        RoundedImage(items.Image!!.get(0), Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
         Column {
             Spacer(modifier = Modifier.weight(1f))
             TextView(
@@ -287,7 +327,7 @@ fun ItemTopPlace(items: Places, modifier: Modifier) {
                 font = Font(R.font.poppins_medium), color = white
             )
             TextView(
-                text = items.tourCount.toString() + " tour",
+                text = items.listTour.size.toString() + " tour",
                 modifier = Modifier
                     .padding(start = 12.dp),
                 textSize = 14,
@@ -295,26 +335,23 @@ fun ItemTopPlace(items: Places, modifier: Modifier) {
             )
 
         }
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .onClick { onSelect.invoke(items) })
     }
     Spacer(modifier = Modifier.width(12.dp))
 
 }
 
 @Composable
-fun ItemTopBucketTour() {
+fun ItemTopBucketTour(tour: Tour, onTouch: (Tour) -> Unit) {
     Box(
         Modifier
             .border(width = 1.dp, color = lightGrey, shape = RoundedCornerShape(12.dp))
             .widthPercent(42f)
             .fillMaxHeight(1f)
-            .background(if(currentTheme==-1) iconBackground else white)
+            .background(if (currentTheme == -1) iconBackground else white)
             .clip(RoundedCornerShape(4.dp))
-            .shadow(
-                spotColor = Color(0xD5ECE9E9),
-                ambientColor = Color(0xD5ECE9E9),
-                elevation = 2.dp,
-                shape = RoundedCornerShape(2.dp)
-            )
 
     ) {
         Column(
@@ -324,7 +361,7 @@ fun ItemTopBucketTour() {
         ) {
             Row(Modifier.heightPercent(15f)) {
                 RoundedImage(
-                    R.drawable.img_test_data_1,
+                    tour.tourImage?.get(0),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxSize(),
@@ -332,17 +369,30 @@ fun ItemTopBucketTour() {
                 )
             }
             Spacer(modifier = Modifier.height(6.dp))
-            TextView(text = "Travel name", modifier = Modifier, font = Font(R.font.poppins_medium))
+            TextView(
+                text = tour.tourName ?: "Error",
+                modifier = Modifier,
+                font = Font(R.font.poppins_medium)
+            )
             Spacer(modifier = Modifier.height(2.dp))
             Row(Modifier.fillMaxWidth()) {
                 TextView(
-                    text = "100",
+                    text = tour.salePrice.toString(),
                     modifier = Modifier,
                     font = Font(R.font.poppins_medium),
-                    color = Color.Red
+                    color = if (currentTheme == 1) Color.Red else white
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                TextView(text = "100", modifier = Modifier, font = Font(R.font.poppins_medium))
+                TextView(text = tour.tourPrice.toString(), modifier = Modifier.drawBehind {
+                    val strokeWidthPx = 1.dp.toPx()
+                    val verticalOffset = size.height / 2
+                    drawLine(
+                        color = gray,
+                        strokeWidth = strokeWidthPx,
+                        start = Offset(0f, verticalOffset),
+                        end = Offset(size.width, verticalOffset)
+                    )
+                }, font = Font(R.font.poppins_medium), color = gray)
             }
             Spacer(modifier = Modifier.weight(1f))
             Row(Modifier.fillMaxWidth(1f)) {
@@ -362,13 +412,29 @@ fun ItemTopBucketTour() {
             }
 
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            InnerImageIcon(
-                modifier = Modifier.size(32.dp),
-                icon = Icons.Rounded.Favorite,
-                icSize = 20
-            )
+        Column(Modifier.fillMaxSize(1f)) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(6.dp)
+                    .onClick {
+
+                    }, horizontalArrangement = Arrangement.End
+            ) {
+                InnerImageIcon(
+                    modifier = Modifier.size(32.dp), icon = Icons.Rounded.Favorite, icSize = 20
+                )
+            }
+            Row(Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .onClick {
+                    onTouch.invoke(tour)
+                }
+                .padding(6.dp)) {}
+
         }
+
 
     }
     Spacer(modifier = Modifier.width(12.dp))

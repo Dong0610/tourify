@@ -26,12 +26,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import dong.datn.tourify.app.AppViewModel
+import dong.datn.tourify.app.appViewModels
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.ui.theme.TourifyTheme
 import dong.datn.tourify.ui.theme.black
@@ -40,7 +42,6 @@ import dong.datn.tourify.ui.theme.white
 import dong.datn.tourify.utils.changeTheme
 import dong.datn.tourify.widget.BottomNavigationBar
 import dong.datn.tourify.widget.animComposable
-import dong.duan.ecommerce.library.showToast
 import kotlinx.coroutines.launch
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEventListener
@@ -56,14 +57,13 @@ sealed class ClientScreen(var route: String) {
     data object UpdateProfileScreen : ClientScreen("update_profile_client")
     data object SettingScreen : ClientScreen("setting_client")
     data object BookingScreen : ClientScreen("booking_client")
-
+    data object DetailTourScreen : ClientScreen("detail_tour_client")
+    data object DetailPlaceScreen : ClientScreen("detail_place_client")
 }
 
 
 open class MainActivity : ComponentActivity() {
-    private lateinit var viewModels: AppViewModel
-
-
+    val viewModels = appViewModels!!
     private fun getCountry(context: Context): String? {
         if (ContextCompat.checkSelfPermission(
                 context,
@@ -95,7 +95,6 @@ open class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        viewModels = ViewModelProvider(this).get(AppViewModel::class.java)
         changeTheme(currentTheme,applicationContext)
         setContent {
 
@@ -203,6 +202,13 @@ open class MainActivity : ComponentActivity() {
             animComposable(ClientScreen.BookingScreen.route) {
                 BookingScreen(navController, viewModels)
             }
+            animComposable(ClientScreen.DetailTourScreen.route) {
+                DetailTourScreen(navController, viewModels, ClientScreen.HomeClientScreen.route)
+            }
+            animComposable(ClientScreen.DetailPlaceScreen.route) {
+                DetailPlaceScreen(navController, viewModels, ClientScreen.HomeClientScreen.route)
+            }
+
         }
 
     }

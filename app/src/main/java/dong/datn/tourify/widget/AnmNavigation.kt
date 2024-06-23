@@ -1,14 +1,18 @@
 package dong.datn.tourify.widget
 
 import android.annotation.SuppressLint
+import android.os.Bundle
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import dong.datn.tourify.app.appViewModels
+import java.io.Serializable
 
 
 @SuppressLint("ComposableDestinationInComposeScope")
@@ -58,4 +62,28 @@ fun NavGraphBuilder.animComposable(
         content(it)
     }
 
+}
+
+
+fun NavController.navigationTo(route: String) {
+    this.navigate(route) {
+        graph.startDestinationRoute?.let { route ->
+            popUpTo(route) { saveState = true }
+        }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
+
+fun NavController.navigationTo(route: String,backScreen:String?=null) {
+    this.navigate(route) {
+        if(backScreen != null){
+            appViewModels?.prevScreen!!.value = backScreen
+        }
+        graph.startDestinationRoute?.let { route ->
+            popUpTo(route) { saveState = true }
+        }
+        launchSingleTop = true
+        restoreState = true
+    }
 }

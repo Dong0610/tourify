@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -41,8 +42,10 @@ import androidx.compose.ui.unit.sp
 import dong.datn.tourify.R
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.ui.theme.darkGray
+import dong.datn.tourify.ui.theme.iconBackground
 import dong.datn.tourify.ui.theme.lightGrey
 import dong.datn.tourify.ui.theme.textColor
+import dong.datn.tourify.ui.theme.transparent
 import dong.datn.tourify.ui.theme.whiteSmoke
 import dong.datn.tourify.widget.onClick
 
@@ -104,7 +107,7 @@ fun InputValue(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                color = if (currentTheme == 1) whiteSmoke else lightGrey,
+                color = if (currentTheme == 1) whiteSmoke else iconBackground,
                 shape = RoundedCornerShape(12.dp)
             ),
         horizontalArrangement = Arrangement.Center,
@@ -161,9 +164,9 @@ fun SearchBox(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                color = if (currentTheme == 1) whiteSmoke else lightGrey,
+                color = if (currentTheme == 1) whiteSmoke else iconBackground,
                 shape = RoundedCornerShape(8.dp)
-            ),
+            ).border(width = 1.dp, shape = RoundedCornerShape(8.dp), color = if(currentTheme==1) transparent else lightGrey),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -205,7 +208,7 @@ fun SearchBox(
         )
         Image(imageVector = Icons.Rounded.Search, contentDescription = "Search", Modifier.onClick {
             onTouch.invoke(valueSearch.value.text)
-        })
+        }, colorFilter = ColorFilter.tint(textColor(context)))
         Spacer(modifier = Modifier.width(12.dp))
     }
 }

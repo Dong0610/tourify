@@ -2,10 +2,7 @@ package dong.datn.tourify.app
 
 import android.annotation.SuppressLint
 import android.util.Log
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.firestore
@@ -15,8 +12,16 @@ import com.google.firebase.messaging.messaging
 import com.google.firebase.storage.ktx.storage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dong.datn.tourify.R
+import dong.datn.tourify.firebase.Firestore
+import dong.datn.tourify.firebase.RealTime
+import dong.datn.tourify.model.Places
+import dong.datn.tourify.utils.SCHEDULE
+import dong.datn.tourify.utils.SERVICE
 import dong.datn.tourify.utils.USERS
 import dong.duan.ecommerce.library.showToast
+import dong.duan.travelapp.model.Schedule
+import dong.duan.travelapp.model.Service
+import dong.duan.travelapp.model.Tour
 import dong.duan.travelapp.model.Users
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -30,12 +35,13 @@ import javax.inject.Inject
 @SuppressLint("MutableCollectionMutableState")
 @HiltViewModel
 class AppViewModel @Inject constructor() : ViewModel() {
+    val prevScreen= mutableStateOf("")
+    val detailPlace = mutableStateOf<Places?>(null)
+    val detailTour =
+        mutableStateOf<Tour?>(null)
+
     var currentIndex = mutableStateOf(0)
     var isKeyboardVisible = mutableStateOf(false)
-
-
-
-
 
     val firestore = Firebase.firestore
     val auth = Firebase.auth
@@ -45,6 +51,8 @@ class AppViewModel @Inject constructor() : ViewModel() {
     fun fogetPassword(text: String) {
 
     }
+
+    val listTour = mutableStateOf<MutableList<Tour>>(mutableListOf())
 
     fun authSignUp(email: String, password: String, name: String, callback: (Int) -> Unit) {
         val user = Users(
@@ -88,6 +96,14 @@ class AppViewModel @Inject constructor() : ViewModel() {
                 showToast("Error checking email: ${e.message}")
                 callback(-1)
             }
+    }
+
+    fun getAllPlaces(callback: (MutableList<Places>?) -> Unit) {
+        Firestore.getListData<Places>("PLACES") {
+
+            Log.d("getAllPlaces",it.toString())
+            callback(it)
+        }
     }
 
     fun signInWithEmailPassword(email: String, password: String, onSuccess: (Int) -> Unit) {
@@ -139,8 +155,29 @@ class AppViewModel @Inject constructor() : ViewModel() {
                 Log.d("TAG", "updateNewToken: ${e.message}")
             }
         }
+    }
 
+    fun onModifyLove(tour: Tour) {
 
+    }
+
+    fun loadServiceByTour(tourID: String?, callback: (Service?) -> Unit) {
+        RealTime.fetchById<Service>("$SERVICE/$tourID") {
+            callback(it)
+        }
+    }
+
+    fun loadScheduleByTour(tourID: String?, function: (Schedule?) -> Unit) {
+        RealTime.fetchById<Schedule>("$SCHEDULE/$tourID") {
+            function(it)
+        }
+    }
+
+    fun getUserComment(uId: String, callback: (Users?) -> Unit) {
+        Firestore.fetchById<Users>(Firebase.firestore.collection("$USERS").document(uId)) {
+            Log.i("getUserComment", "${it?.toJson()}")
+            callback(it)
+        }
     }
 
 }

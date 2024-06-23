@@ -19,23 +19,28 @@
         android:theme="@style/Theme.Tourify"
         tools:targetApi="31">
         <activity
-            android:windowSoftInputMode="adjustResize"
+            android:name=".test.AddDataActivity"
+            android:exported="true"
+            android:label="@string/title_activity_add_data"
+            android:theme="@style/Theme.Tourify" />
+        <activity
             android:name=".screen.client.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.Tourify" />
+            android:theme="@style/Theme.Tourify"
+            android:windowSoftInputMode="adjustResize" />
         <activity
-            android:windowSoftInputMode="adjustResize"
             android:name=".screen.start.AccountActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.Tourify" />
+            android:theme="@style/Theme.Tourify"
+            android:windowSoftInputMode="adjustResize" />
         <activity
-            android:windowSoftInputMode="adjustResize"
             android:name=".screen.start.SplashActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.Tourify">
+            android:theme="@style/Theme.Tourify"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -43,7 +48,8 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".firebase.FirebaseMessageService"
+        <service
+            android:name=".firebase.FirebaseMessageService"
             android:exported="true">
             <intent-filter>
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />

@@ -60,12 +60,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.PagerState
 import dong.datn.tourify.R
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.ui.theme.black
-import dong.datn.tourify.ui.theme.darkGray
 import dong.datn.tourify.ui.theme.iconBackground
-import dong.datn.tourify.ui.theme.lightGrey
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.white
 import dong.datn.tourify.ui.theme.whiteSmoke
@@ -132,6 +132,23 @@ fun VerScrollView(content: @Composable BoxScope.() -> Unit) {
         }
     }
     Box(Modifier.verticalScroll(scrollState)) {
+        content()
+    }
+}
+
+@Composable
+fun VerScrollView(modifier: Modifier,content: @Composable BoxScope.() -> Unit) {
+
+    val scrollState = rememberScrollState()
+    val coroutineScope = rememberCoroutineScope()
+    val keyboardHeight = WindowInsets.ime.getBottom(LocalDensity.current)
+
+    LaunchedEffect(key1 = keyboardHeight) {
+        coroutineScope.launch {
+            scrollState.scrollBy(keyboardHeight.toFloat())
+        }
+    }
+    Box(modifier.verticalScroll(scrollState)) {
         content()
     }
 }
@@ -255,6 +272,42 @@ fun TextView(
 }
 
 @Composable
+fun TextView(
+    text: String,
+    modifier: Modifier,
+    textSize: Int = 16,
+    color: Color? = null,
+    font: Font? = null,
+    maxLine:Int =1,
+    textAlign: TextAlign? = TextAlign.Start,
+    onclick: (() -> Unit?)? = null
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val context = LocalContext.current
+    Text(
+        text = text,
+        fontSize = textSize.sp,
+        textAlign = textAlign,
+        maxLines = maxLine,
+        color = color ?: textColor(context),
+        fontFamily = FontFamily(
+            font ?: Font(
+                R.font.poppins_regular
+            )
+        ),
+        style = TextStyle(
+            platformStyle = PlatformTextStyle(
+                includeFontPadding = false
+            )
+        ),
+        modifier = modifier.clickable(interactionSource, null) {
+            onclick?.invoke()
+        }
+    )
+}
+
+
+@Composable
 fun AppButton(text: String, modifier: Modifier, loadding: Int? = null, onClick: () -> Unit) {
     val isLoading = remember {
         mutableStateOf(loadding)
@@ -273,7 +326,7 @@ fun AppButton(text: String, modifier: Modifier, loadding: Int? = null, onClick: 
             )
             .padding(vertical = 12.dp)
             .onClick {
-                isLoading.value=0
+                isLoading.value = 0
                 onClick.invoke()
             },
         horizontalArrangement = Arrangement.Center,
@@ -322,6 +375,41 @@ fun AppButton(text: String, modifier: Modifier, loadding: Int? = null, onClick: 
                 }
             }
         }
+
+    }
+}
+
+
+
+@Composable
+fun ButtonNext(text: String, modifier: Modifier,onClick: () -> Unit) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(
+                        Color(0xFF02FF9A),
+                        Color(0xFF0622BD)
+                    )
+                ),
+                shape = RoundedCornerShape(12.dp)
+            )
+            .padding(vertical = 12.dp)
+            .onClick {
+                onClick.invoke()
+            },
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = text,
+            fontSize = 16.sp,
+            color = Color.White,
+            fontFamily = FontFamily(Font(R.font.poppins_bold)),
+            modifier = Modifier.padding(horizontal = 16.dp),
+            textAlign = TextAlign.Center
+        )
 
     }
 }
@@ -375,7 +463,7 @@ fun DotIndicator(count: Int = 3, current: Int = 0) {
     val inactiveDotColor = Color.Gray
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.padding(16.dp)
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
     ) {
         for (i in 0 until count) {
             Box(
@@ -391,6 +479,31 @@ fun DotIndicator(count: Int = 3, current: Int = 0) {
     }
 }
 
+@OptIn(ExperimentalPagerApi::class)
+@Composable
+fun DotIndicator(pagerState: PagerState, count: Int = pagerState.pageCount) {
+    val activeDotSize = 16.dp
+    val inactiveDotSize = 8.dp
+    val activeDotColor = Color.Blue
+    val inactiveDotColor = Color.Gray
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(vertical = 2.dp, horizontal = 16.dp)
+    ) {
+        for (i in 0 until count) {
+            Box(
+                modifier = Modifier
+                    .width(if (i == pagerState.currentPage) activeDotSize else inactiveDotSize)
+                    .height(inactiveDotSize)
+                    .background(
+                        color = if (i == pagerState.currentPage) activeDotColor else inactiveDotColor,
+                        shape = CircleShape
+                    )
+            )
+        }
+    }
+}
 
 
 

@@ -3,8 +3,8 @@ package dong.datn.tourify.screen.start
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -32,26 +32,35 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
+import dagger.hilt.android.AndroidEntryPoint
 import dong.datn.tourify.R
+import dong.datn.tourify.app.AppViewModel
+import dong.datn.tourify.app.appViewModels
 import dong.datn.tourify.app.authSignIn
+import dong.datn.tourify.firebase.Firestore
 import dong.datn.tourify.screen.client.MainActivity
 import dong.datn.tourify.ui.theme.TourifyTheme
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.white
+import dong.datn.tourify.utils.TOUR
 import dong.datn.tourify.utils.heightPercent
+import dong.duan.travelapp.model.Tour
 import kotlinx.coroutines.delay
 
-
+@AndroidEntryPoint
 class SplashActivity : ComponentActivity() {
+    val viewModel: AppViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        appViewModels = this.viewModel
+        Firestore.getListData<Tour>(Firebase.firestore.collection("$TOUR")) {
+            viewModel.listTour.value = if (it == null) mutableListOf() else it
+        }
 
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-            }
-        })
+
         setContent {
-
             TourifyTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     SplashScreen(innerPadding) {
@@ -67,6 +76,8 @@ class SplashActivity : ComponentActivity() {
                 }
             }
         }
+
+
     }
 
 

@@ -13,20 +13,16 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import dong.datn.tourify.app.AppViewModel
-import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.screen.client.ClientScreen
 import dong.datn.tourify.ui.theme.navigationBar
 import dong.datn.tourify.ui.theme.navigationColor
-import dong.datn.tourify.ui.theme.thistle
 import dong.datn.tourify.ui.theme.white
 
 enum class BottomNavigationItem(
