@@ -16,12 +16,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.rounded.Star
-import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -38,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -53,6 +52,8 @@ import dong.datn.tourify.firebase.RealTime
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.gold
 import dong.datn.tourify.ui.theme.gray
+import dong.datn.tourify.ui.theme.lightGrey
+import dong.datn.tourify.ui.theme.limeGreen
 import dong.datn.tourify.ui.theme.red
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.transparent
@@ -241,7 +242,7 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                         countChild.value = it
                         totalPrice.value =
                             (tour.value!!.salePrice!! * countAdutl.value) + (tour.value!!.salePrice!! * 0.75f * countChild.value)
-                        if (totalPrice.value == 0.0 || it == 0) {
+                        if (totalPrice.value == 0.0 || countAdutl.value == 0) {
                             isDisable.value = true
                         } else {
                             isDisable.value = false
@@ -272,6 +273,7 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                     }
                 }
             }
+            Spacer(modifier = Modifier.weight(1f))
             Row(
                 Modifier
                     .fillMaxWidth(1f)
@@ -289,11 +291,11 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                     font = Font(R.font.poppins_semibold)
                 )
             }
-            Spacer(modifier = Modifier.weight(1f))
+            Space(h = 6)
             AppButton(
                 isDisable = isDisable.value,
                 text = context.getString(R.string.confirm),
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = 16.dp), loadding = null
             ) {
                 isShowDialog.value = true
             }
@@ -301,7 +303,7 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
         }
     }
     if (isShowDialog.value) {
-        CustomDialog {
+        CustomDialog(totalPrice.value) {
             isShowDialog.value = false
 
         }
@@ -311,15 +313,14 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
 
 
 @Composable
-fun CustomDialog(onDismiss: () -> Unit) {
+fun CustomDialog(totalPrice: Double, onDismiss: () -> Unit) {
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true)
     ) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+                .fillMaxWidth(),
             shape = MaterialTheme.shapes.medium,
             color = MaterialTheme.colorScheme.background
         ) {
@@ -329,35 +330,62 @@ fun CustomDialog(onDismiss: () -> Unit) {
                     .fillMaxWidth(1f)
             ) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    FaIcon(faIcon = FaIcons.CheckCircle, tint = appColor, size = 32.dp)
-                    Space(w = 8) 
-                    TextView(text = , modifier = )
-                    
+                    FaIcon(faIcon = FaIcons.CheckCircle, tint = limeGreen, size = 32.dp)
+                    Space(w = 8)
+                    TextView(
+                        text = LocalContext.current.getString(R.string.confirm),
+                        modifier = Modifier,
+                        textSize = 18,
+                        font = Font(R.font.poppins_semibold),
+                        color = limeGreen
+                    )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-
-                var text = remember { mutableStateOf("") }
-                BasicTextField(
-                    value = text.value,
-                    onValueChange = { text.value = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
+                TextView(
+                    text = LocalContext.current.getString(R.string.confirm_message) + " ${totalPrice * 0.4}",
+                    modifier = Modifier,
+                    textSize = 18,
+                    font = Font(R.font.poppins_regular)
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                Row {
-                    Button(onClick = onDismiss) {
-                        Text("Cancel")
+                Row(Modifier.fillMaxWidth(1f)) {
+                    Box(
+                        Modifier
+                            .onClick {
+                                onDismiss()
+                            }
+                            .height(40.dp)
+                            .weight(1f)
+                            .background(lightGrey, shape = RoundedCornerShape(40.dp)),
+                        contentAlignment = Alignment.Center) {
+                        Text(
+                            LocalContext.current.getString(R.string.cancel),
+                            Modifier,
+                            color = Color.Black,
+                            fontFamily = FontFamily(Font(R.font.poppins_medium))
+                        )
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = {
-                        // Handle OK click
-                        onDismiss()
-                    }) {
-                        Text("OK")
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Box(
+                        Modifier
+                            .onClick {
+                                onDismiss()
+                            }
+                            .height(40.dp)
+                            .weight(1f)
+                            .background(limeGreen, shape = RoundedCornerShape(40.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            LocalContext.current.getString(R.string.Ok),
+                            Modifier,
+                            color = Color.Black,
+                            fontFamily = FontFamily(Font(R.font.poppins_medium))
+                        )
                     }
+
                 }
             }
         }

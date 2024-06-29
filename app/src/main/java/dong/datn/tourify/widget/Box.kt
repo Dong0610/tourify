@@ -332,7 +332,10 @@ fun AppButton(
             .padding(vertical = 12.dp)
             .onClick {
                 if (isDisable == false) {
-                    isLoading.value = 0
+                    if(loadding!=null){
+                        isLoading.value = 0
+                    }
+
                     onClick.invoke()
                 }
 

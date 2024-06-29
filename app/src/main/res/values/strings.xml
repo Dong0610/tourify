@@ -77,4 +77,8 @@
     <string name="child">Children</string>
     <string name="confirm">Confirm</string>
     <string name="total_price">Total price</string>
+    <string name="confirm_message">You have confirmed the payment of the pile</string>
+    <string name="cancel">Cancel</string>
+    <string name="Ok">Ok</string>
+    <string name="change_theme">Change theme</string>
 </resources>

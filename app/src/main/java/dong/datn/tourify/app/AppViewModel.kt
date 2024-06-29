@@ -14,6 +14,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dong.datn.tourify.R
 import dong.datn.tourify.firebase.Firestore
 import dong.datn.tourify.firebase.RealTime
+import dong.datn.tourify.model.ConversionChat
 import dong.datn.tourify.model.Places
 import dong.datn.tourify.utils.SCHEDULE
 import dong.datn.tourify.utils.SERVICE
@@ -40,6 +41,8 @@ class AppViewModel @Inject constructor() : ViewModel() {
     val detailPlace = mutableStateOf<Places?>(null)
     val detailTour =
         mutableStateOf<Tour?>(null)
+
+    val currentChat = mutableStateOf<ConversionChat?>(null)
 
     var currentIndex = mutableStateOf(0)
     var isKeyboardVisible = mutableStateOf(false)

@@ -112,7 +112,7 @@ fun SettingScreen(nav: NavController, viewModels: AppViewModel) {
                 horizontalArrangement = Arrangement.Start
             ) {
                 TextView(
-                    context.getString(R.string.change_password),
+                    context.getString(R.string.change_theme),
                     Modifier
                         .wrapContentSize(),
                     textSize = 20,

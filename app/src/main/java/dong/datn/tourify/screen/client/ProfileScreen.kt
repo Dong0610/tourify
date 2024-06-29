@@ -36,7 +36,6 @@ import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.black
 import dong.datn.tourify.ui.theme.darkGray
-import dong.datn.tourify.ui.theme.red
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.white
 import dong.datn.tourify.ui.theme.whiteSmoke
@@ -46,6 +45,7 @@ import dong.datn.tourify.widget.RoundedImage
 import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.VerScrollView
 import dong.datn.tourify.widget.ViewParent
+import dong.datn.tourify.widget.navigationTo
 import dong.datn.tourify.widget.onClick
 
 @Composable
@@ -154,7 +154,7 @@ fun ProfileScreen(navController: NavHostController, viewModels: AppViewModel) {
                         icon = R.drawable.ic_rounder_chatbot,
                         label = context.getString(R.string.chat)
                     ) {
-
+                        navController.navigationTo(ClientScreen.ConversionScreen.route)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     ItemMenuProfie(

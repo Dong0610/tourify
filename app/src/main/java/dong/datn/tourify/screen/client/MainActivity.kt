@@ -60,6 +60,8 @@ sealed class ClientScreen(var route: String) {
     data object DetailTourScreen : ClientScreen("detail_tour_client")
     data object DetailPlaceScreen : ClientScreen("detail_place_client")
     data object BookingNowScreen : ClientScreen("booking_now_client")
+    data object ConversionScreen : ClientScreen("conversion_screen")
+    data object ChatScreen : ClientScreen("chat_screen")
 }
 
 
@@ -219,6 +221,12 @@ open class MainActivity : ComponentActivity() {
             }
             animComposable(ClientScreen.BookingNowScreen.route) {
                 BookingNowScreen(navController, viewModels)
+            }
+            animComposable(ClientScreen.ConversionScreen.route) {
+                ConversionScreen(navController, viewModels)
+            }
+            animComposable(ClientScreen.ChatScreen.route) {
+                ChatScreen(navController, viewModels)
             }
 
         }
