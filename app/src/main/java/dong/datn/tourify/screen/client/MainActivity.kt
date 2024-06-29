@@ -3,13 +3,16 @@ package dong.datn.tourify.screen.client
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
@@ -27,11 +30,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dong.datn.tourify.app.appViewModels
 import dong.datn.tourify.app.currentTheme
@@ -59,6 +59,7 @@ sealed class ClientScreen(var route: String) {
     data object BookingScreen : ClientScreen("booking_client")
     data object DetailTourScreen : ClientScreen("detail_tour_client")
     data object DetailPlaceScreen : ClientScreen("detail_place_client")
+    data object BookingNowScreen : ClientScreen("booking_now_client")
 }
 
 
@@ -95,6 +96,12 @@ open class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(
+                Color.TRANSPARENT,
+                Color.TRANSPARENT
+            )
+        )
         changeTheme(currentTheme,applicationContext)
         setContent {
 
@@ -155,6 +162,8 @@ open class MainActivity : ComponentActivity() {
                 }
             }
         }
+
+
     }
 
     open fun onBack() {}
@@ -207,6 +216,9 @@ open class MainActivity : ComponentActivity() {
             }
             animComposable(ClientScreen.DetailPlaceScreen.route) {
                 DetailPlaceScreen(navController, viewModels, ClientScreen.HomeClientScreen.route)
+            }
+            animComposable(ClientScreen.BookingNowScreen.route) {
+                BookingNowScreen(navController, viewModels)
             }
 
         }

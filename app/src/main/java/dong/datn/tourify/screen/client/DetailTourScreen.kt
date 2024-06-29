@@ -67,6 +67,7 @@ import dong.datn.tourify.widget.RoundedImage
 import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.VerScrollView
 import dong.datn.tourify.widget.ViewParent
+import dong.datn.tourify.widget.navigationTo
 import dong.datn.tourify.widget.onClick
 import dong.duan.travelapp.model.DetailSchedule
 import dong.duan.travelapp.model.Schedule
@@ -255,7 +256,8 @@ fun DetailTourScreen(nav: NavController, viewModel: AppViewModel, router: String
                     text = context.getString(R.string.booking_now),
                     modifier = Modifier.padding(horizontal = 16.dp)
                 ) {
-
+                    nav.navigationTo(ClientScreen.BookingNowScreen.route)
+                    viewModel.bookingTourNow.value = tour
                 }
 
                 Column(

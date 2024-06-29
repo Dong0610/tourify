@@ -84,6 +84,7 @@ fun TourifyTheme(
                 it,
                 context.findActivity()?.window!!.decorView
             )
+
         }
     }
     val flags =
@@ -94,12 +95,17 @@ fun TourifyTheme(
                 or View.SYSTEM_UI_FLAG_FULLSCREEN
                 or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                 or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
+
+
     SideEffect {
         systemUiController?.hide(flags)
         systemUiController?.isAppearanceLightStatusBars = darkTheme
         systemUiController?.systemBarsBehavior =
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+
+
     }
+
 
     MaterialTheme(
         colorScheme = colorScheme,

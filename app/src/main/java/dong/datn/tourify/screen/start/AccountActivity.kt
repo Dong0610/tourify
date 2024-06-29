@@ -17,6 +17,7 @@ import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
 import dong.datn.tourify.app.AppViewModel
+import dong.datn.tourify.app.appViewModels
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.screen.client.MainActivity
 import dong.datn.tourify.ui.theme.TourifyTheme
@@ -38,7 +39,7 @@ open class AccountActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         currentTheme = 1
-        viewModels = ViewModelProvider(this).get(AppViewModel::class.java)
+        viewModels = appViewModels!!
 
         setContent {
 
@@ -78,7 +79,6 @@ open class AccountActivity : ComponentActivity() {
             }
             animComposable(AccountScreen.SignInScreen.route) {
                 SignInScreen(navController, viewModels)
-
             }
 
 

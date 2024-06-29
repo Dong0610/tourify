@@ -29,6 +29,7 @@ import dong.datn.tourify.widget.AppButton
 import dong.datn.tourify.widget.HorScrollView
 import dong.datn.tourify.widget.IconView
 import dong.datn.tourify.widget.TextView
+import dong.datn.tourify.widget.VerScrollView
 import dong.datn.tourify.widget.ViewParent
 import dong.duan.ecommerce.library.showToast
 import dong.duan.livechat.widget.InputValue
@@ -61,7 +62,7 @@ fun SignInScreen(navController: NavHostController, viewModels: AppViewModel) {
                 }
             }
 
-            HorScrollView {
+            VerScrollView(modifier = Modifier.weight(1f)) {
 
                 Column {
                     Spacer(modifier = Modifier.heightPercent(15f))
@@ -125,7 +126,7 @@ fun SignInScreen(navController: NavHostController, viewModels: AppViewModel) {
                     Spacer(modifier = Modifier.height(32.dp))
 
                     AppButton(
-                        text = context.getString(R.string.sign_in), modifier = Modifier, null
+                        text = context.getString(R.string.sign_in), modifier = Modifier, stateButton.value
                     ) {
                         stateButton.value = 0
 

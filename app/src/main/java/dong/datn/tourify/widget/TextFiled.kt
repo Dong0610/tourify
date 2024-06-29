@@ -152,6 +152,66 @@ fun InputValue(
     }
 }
 
+@Composable
+fun InputValue(
+    value: String,
+    hint: String = "",
+    modifier: Modifier=Modifier,
+    maxLines: Int=1,
+    textSize: TextUnit =16.sp,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    onValueChange: (String) -> Unit
+) {
+    val context = LocalContext.current
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                color = transparent,
+                shape = RoundedCornerShape(12.dp)
+            ).wrapContentHeight(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        BasicTextField(
+            value = value,
+            onValueChange = { onValueChange(it) },
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 8.dp)
+                .background(Color.Transparent),
+            textStyle = TextStyle(
+                color = textColor(context),
+                fontSize = textSize,
+                fontFamily = FontFamily(Font(R.font.poppins_medium))
+            ),
+            maxLines = maxLines,
+            keyboardOptions = KeyboardOptions.Default.copy(
+                keyboardType = keyboardType
+            ),
+            decorationBox = { innerTextField ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp), contentAlignment = Alignment.CenterStart
+                ) {
+                    if (value.isEmpty()) {
+                        Text(
+                            text = hint,
+                            style = TextStyle(
+                                color = darkGray,
+                                fontSize = textSize,
+                                fontFamily = FontFamily(Font(R.font.poppins_regular))
+                            )
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+        )
+    }
+}
+
 
 @Composable
 fun SearchBox(

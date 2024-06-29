@@ -24,13 +24,12 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
-import dong.datn.tourify.screen.client.MainActivity
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.utils.heightPercent
 import dong.datn.tourify.widget.AppButton
-import dong.datn.tourify.widget.HorScrollView
 import dong.datn.tourify.widget.IconView
 import dong.datn.tourify.widget.TextView
+import dong.datn.tourify.widget.VerScrollView
 import dong.datn.tourify.widget.ViewParent
 import dong.duan.ecommerce.library.showToast
 import dong.duan.livechat.utility.delayTime
@@ -50,11 +49,11 @@ fun SignUpScreen(nav: NavController, viewModels: AppViewModel) {
             popUpTo(0)
         }
     }) {
-        HorScrollView {
-            Column(
-                Modifier
-                    .fillMaxSize(1f)
-                    .padding(16.dp)
+
+        Column(
+            Modifier
+                .fillMaxSize(1f)
+                .padding(16.dp)
             ) {
 
                 Row(Modifier.fillMaxWidth(1f)) {
@@ -64,6 +63,9 @@ fun SignUpScreen(nav: NavController, viewModels: AppViewModel) {
                         }
                     }
                 }
+            VerScrollView(modifier = Modifier.weight(1f)) {
+                Column(Modifier.fillMaxWidth()) {
+
 
                 Spacer(modifier = Modifier.heightPercent(15f))
                 Row(
@@ -161,6 +163,7 @@ fun SignUpScreen(nav: NavController, viewModels: AppViewModel) {
 
                 }
             }
+        }
         }
 
     }

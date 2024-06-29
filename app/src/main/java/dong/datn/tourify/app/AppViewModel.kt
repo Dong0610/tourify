@@ -35,6 +35,7 @@ import javax.inject.Inject
 @SuppressLint("MutableCollectionMutableState")
 @HiltViewModel
 class AppViewModel @Inject constructor() : ViewModel() {
+
     val prevScreen= mutableStateOf("")
     val detailPlace = mutableStateOf<Places?>(null)
     val detailTour =
@@ -47,6 +48,8 @@ class AppViewModel @Inject constructor() : ViewModel() {
     val auth = Firebase.auth
     val realtime = Firebase.firestore
     val storage = Firebase.storage
+
+    val bookingTourNow = mutableStateOf<Tour?>(null)
 
     fun fogetPassword(text: String) {
 

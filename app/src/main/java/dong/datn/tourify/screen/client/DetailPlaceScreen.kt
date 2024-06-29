@@ -88,8 +88,6 @@ fun DetailPlaceScreen(nav: NavController, viewModel: AppViewModel, route: String
 
         ) {
             VerScrollView {
-
-
                 Column(Modifier.fillMaxSize(1f)) {
                     HorizontalPager(
                         modifier = Modifier
@@ -193,6 +191,7 @@ fun TourByPlace(data: String, onSelect: (Tour) -> Unit) {
     Firestore.fetchById<Tour>("$TOUR/$data/") {
         tour.value = it
     }
+    val context= LocalContext.current
     if (tour.value != null) {
         Box(
             Modifier
@@ -226,7 +225,7 @@ fun TourByPlace(data: String, onSelect: (Tour) -> Unit) {
 
 
                     TextView(
-                        text = tour.value!!.tourName ?: "Error",
+                        text = tour.value!!.tourName ?: context.getString(R.string.error),
                         modifier = Modifier,
                         font = Font(R.font.poppins_medium)
                     )

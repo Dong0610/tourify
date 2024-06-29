@@ -173,7 +173,7 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
                                 listImage.get(page),
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.heightPercent(28f),
-                                shape = RoundedCornerShape(8.dp)
+                                shape = RoundedCornerShape(6.dp)
                             )
                             indexSlideImage.value = page
                         }
@@ -222,7 +222,7 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
                         Modifier
                             .fillMaxWidth(1f)
                             .padding(horizontal = 16.dp)
-                            .heightPercent(28f)
+                            .heightPercent(30f)
                     ) {
                         LazyRow {
                             items(viewModel.listTour.value, key = {
@@ -230,13 +230,7 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
                             }) {
                                 ItemTopBucketTour(it) {
                                     viewModel.detailTour.value = it
-                                    nav.navigate(ClientScreen.DetailTourScreen.route) {
-                                        nav.graph.startDestinationRoute?.let { route ->
-                                            popUpTo(route) { saveState = true }
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
+                                    nav.navigationTo(ClientScreen.DetailTourScreen.route)
                                 }
                             }
                         }
@@ -375,14 +369,14 @@ fun ItemTopBucketTour(tour: Tour, onTouch: (Tour) -> Unit) {
                 font = Font(R.font.poppins_medium)
             )
             Spacer(modifier = Modifier.height(2.dp))
-            Row(Modifier.fillMaxWidth()) {
+
                 TextView(
                     text = tour.salePrice.toString(),
                     modifier = Modifier,
                     font = Font(R.font.poppins_medium),
                     color = if (currentTheme == 1) Color.Red else white
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(3.dp))
                 TextView(text = tour.tourPrice.toString(), modifier = Modifier.drawBehind {
                     val strokeWidthPx = 1.dp.toPx()
                     val verticalOffset = size.height / 2
@@ -393,7 +387,7 @@ fun ItemTopBucketTour(tour: Tour, onTouch: (Tour) -> Unit) {
                         end = Offset(size.width, verticalOffset)
                     )
                 }, font = Font(R.font.poppins_medium), color = gray)
-            }
+
             Spacer(modifier = Modifier.weight(1f))
             Row(Modifier.fillMaxWidth(1f)) {
                 Icon(
@@ -462,7 +456,7 @@ fun ItemCategory(modifier: Modifier, content: String, icon: Int, onSelect: () ->
             TextView(
                 text = content,
                 modifier = Modifier,
-                textSize = 16, color = white
+                textSize = 16, color = white, maxLine = 1
             )
         }
     }

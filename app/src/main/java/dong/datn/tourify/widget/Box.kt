@@ -66,6 +66,7 @@ import dong.datn.tourify.R
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.ui.theme.black
 import dong.datn.tourify.ui.theme.iconBackground
+import dong.datn.tourify.ui.theme.lightGrey
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.white
 import dong.datn.tourify.ui.theme.whiteSmoke
@@ -308,7 +309,13 @@ fun TextView(
 
 
 @Composable
-fun AppButton(text: String, modifier: Modifier, loadding: Int? = null, onClick: () -> Unit) {
+fun AppButton(
+    text: String,
+    modifier: Modifier,
+    loadding: Int? = null,
+    isDisable: Boolean = false,
+    onClick: () -> Unit
+) {
     val isLoading = remember {
         mutableStateOf(loadding)
     }
@@ -317,17 +324,18 @@ fun AppButton(text: String, modifier: Modifier, loadding: Int? = null, onClick: 
             .fillMaxWidth()
             .background(
                 brush = Brush.horizontalGradient(
-                    colors = listOf(
-                        Color(0xFF02FF9A),
-                        Color(0xFF0622BD)
-                    )
-                ),
-                shape = RoundedCornerShape(12.dp)
+                    colors = if (!isDisable) listOf(
+                        Color(0xFF02FF9A), Color(0xFF0622BD)
+                    ) else listOf(lightGrey, lightGrey)
+                ), shape = RoundedCornerShape(12.dp)
             )
             .padding(vertical = 12.dp)
             .onClick {
-                isLoading.value = 0
-                onClick.invoke()
+                if (isDisable == false) {
+                    isLoading.value = 0
+                    onClick.invoke()
+                }
+
             },
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
@@ -389,11 +397,9 @@ fun ButtonNext(text: String, modifier: Modifier,onClick: () -> Unit) {
             .background(
                 brush = Brush.horizontalGradient(
                     colors = listOf(
-                        Color(0xFF02FF9A),
-                        Color(0xFF0622BD)
+                        Color(0xFF02FF9A), Color(0xFF0622BD)
                     )
-                ),
-                shape = RoundedCornerShape(12.dp)
+                ), shape = RoundedCornerShape(12.dp)
             )
             .padding(vertical = 12.dp)
             .onClick {

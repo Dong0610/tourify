@@ -55,12 +55,12 @@ import dong.datn.tourify.widget.onClick
 fun LanguageScreen(navController: NavHostController, onBack: () -> Unit) {
     val context = LocalContext.current
 
-    if (!isSetUpLanguage) {
+    if (isSetUpLanguage) {
         navController.navigate(AccountScreen.SignInScreen.route) {
             popUpTo(0)
         }
     }
-    else if(authSignIn!=null){
+     if(authSignIn!=null){
         onBack.invoke()
     }
     else {
@@ -99,7 +99,6 @@ fun LanguageScreen(navController: NavHostController, onBack: () -> Unit) {
 
                         }
                     )
-//
                     IconView(modifier = Modifier, icon = Icons.Rounded.Check) {
                         LanguageUtil.changeLang(selectedLanguage.value.code, context)
                         navController.navigate(AccountScreen.SignInScreen.route) {
