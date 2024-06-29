@@ -92,8 +92,18 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
         mutableStateOf(false)
     }
 
+    val countChild = remember {
+        mutableStateOf(0)
+    }
+    val countAdutl = remember {
+        mutableStateOf(0)
+    }
+
     val tourTimeService = remember {
         mutableStateOf<String>("")
+    }
+    val totalPrice = remember {
+        mutableStateOf(0.0)
     }
     if (tour.value != null) {
         RealTime.fetchById<String>("$SERVICE/${tour.value?.tourID}/time") {
@@ -214,14 +224,28 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                         name = context.getString(R.string.adult),
                         price = tour.value!!.salePrice!!
                     ) {
-
+                        countAdutl.value = it
+                        totalPrice.value =
+                            (tour.value!!.salePrice!! * countAdutl.value) + (tour.value!!.salePrice!! * 0.75f * countChild.value)
+                        if (totalPrice.value == 0.0 || it == 0) {
+                            isDisable.value = true
+                        } else {
+                            isDisable.value = false
+                        }
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     ArrowValue(
                         name = context.getString(R.string.child),
                         price = tour.value!!.salePrice!! * 0.75
                     ) {
-
+                        countChild.value = it
+                        totalPrice.value =
+                            (tour.value!!.salePrice!! * countAdutl.value) + (tour.value!!.salePrice!! * 0.75f * countChild.value)
+                        if (totalPrice.value == 0.0 || it == 0) {
+                            isDisable.value = true
+                        } else {
+                            isDisable.value = false
+                        }
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(
@@ -247,6 +271,23 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                         }
                     }
                 }
+            }
+            Row(
+                Modifier
+                    .fillMaxWidth(1f)
+                    .padding(horizontal = 16.dp), horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                TextView(
+                    text = context.getString(R.string.total_price),
+                    modifier = Modifier,
+                    font = Font(R.font.poppins_semibold),
+                )
+                TextView(
+                    text = totalPrice.value.toCurrency(),
+                    modifier = Modifier,
+                    color = if (currentTheme == 1) red else white,
+                    font = Font(R.font.poppins_semibold)
+                )
             }
             Spacer(modifier = Modifier.weight(1f))
             AppButton(
@@ -282,8 +323,17 @@ fun CustomDialog(onDismiss: () -> Unit) {
             shape = MaterialTheme.shapes.medium,
             color = MaterialTheme.colorScheme.background
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("This is a custom dialog")
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(1f)
+            ) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    FaIcon(faIcon = FaIcons.CheckCircle, tint = appColor, size = 32.dp)
+                    Space(w = 8) 
+                    TextView(text = , modifier = )
+                    
+                }
                 Spacer(modifier = Modifier.height(8.dp))
 
                 var text = remember { mutableStateOf("") }
