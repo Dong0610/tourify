@@ -1,5 +1,8 @@
 package dong.datn.tourify.utils
 
+import android.content.Context
+import android.content.res.Configuration
+import android.os.Build
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -37,6 +40,10 @@ import coil.request.ImageRequest
 import dong.datn.tourify.app.currentTheme
 import dong.duan.livechat.widget.GradientProgressIndicator
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Date
 import java.util.Locale
 
 
@@ -159,25 +166,61 @@ fun Color.opacity(alpha: Float):Color{
     )
 }
 
-fun Float.toCurrency(code: String = "vn"): String {
-    val locale = Locale(code)
+fun timeNow(): String {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val currentDateTime = LocalDateTime.now()
+        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")
+        currentDateTime.format(formatter)
+    } else {
+        val date = Date()
+        val formatter = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
+        formatter.format(date)
+    }
+}
+fun isDarkMode(context: Context): Boolean {
+    val currentNightMode =
+        context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+    return currentNightMode == Configuration.UI_MODE_NIGHT_YES
+}
+
+fun Double.toCurrency(format: String = "vn"): String {
+    val locale = when (format.lowercase()) {
+        "us" -> Locale.US
+        "uk" -> Locale.UK
+        "vn" -> Locale("vi", "VN")
+        // Add more formats as needed
+        else -> Locale.getDefault()
+    }
+
     val currencyFormat = NumberFormat.getCurrencyInstance(locale)
     return currencyFormat.format(this)
 }
 
-fun Int.toCurrency(code: String = "vn"): String {
-    val locale = Locale(code)
+fun Int.toCurrency(format: String = "vn"): String {
+    val locale = when (format.lowercase()) {
+        "us" -> Locale.US
+        "uk" -> Locale.UK
+        "vn" -> Locale("vi", "VN")
+        // Add more formats as needed
+        else -> Locale.getDefault()
+    }
+
     val currencyFormat = NumberFormat.getCurrencyInstance(locale)
     return currencyFormat.format(this)
 }
 
-fun Double.toCurrency(code: String = "vn"): String {
-    val locale = Locale(code)
+fun Float.toCurrency(format: String = "vn"): String {
+    val locale = when (format.lowercase()) {
+        "us" -> Locale.US
+        "uk" -> Locale.UK
+        "vn" -> Locale("vi", "VN")
+        // Add more formats as needed
+        else -> Locale.getDefault()
+    }
+
     val currencyFormat = NumberFormat.getCurrencyInstance(locale)
     return currencyFormat.format(this)
 }
-
-
 
 
 

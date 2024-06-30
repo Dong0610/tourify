@@ -62,6 +62,9 @@ sealed class ClientScreen(var route: String) {
     data object BookingNowScreen : ClientScreen("booking_now_client")
     data object ConversionScreen : ClientScreen("conversion_screen")
     data object ChatScreen : ClientScreen("chat_screen")
+    data object ForgetPassScreen : ClientScreen("forget_pass_screen")
+    data object EnterOtpCodeScreen : ClientScreen("enter_otp_code")
+    data object UpdatePasswordScreen : ClientScreen("update_password_screen")
 }
 
 
@@ -227,6 +230,12 @@ open class MainActivity : ComponentActivity() {
             }
             animComposable(ClientScreen.ChatScreen.route) {
                 ChatScreen(navController, viewModels)
+            }
+            animComposable(ClientScreen.ForgetPassScreen.route){
+                ForgetPassScreen(navController, viewModels)
+            }
+            animComposable(ClientScreen.EnterOtpCodeScreen.route){
+                EnterOtpScreen(nav = navController, viewModel =viewModels )
             }
 
         }

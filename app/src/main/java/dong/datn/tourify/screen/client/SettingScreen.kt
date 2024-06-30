@@ -115,7 +115,7 @@ fun SettingScreen(nav: NavController, viewModels: AppViewModel) {
                     context.getString(R.string.change_theme),
                     Modifier
                         .wrapContentSize(),
-                    textSize = 20,
+                    textSize = 16,
                     textColor(context),
                     font = Font(R.font.poppins_regular),
                     textAlign = TextAlign.Start
@@ -141,7 +141,7 @@ fun SettingScreen(nav: NavController, viewModels: AppViewModel) {
                     context.getString(R.string.notification_post),
                     Modifier
                         .wrapContentSize(),
-                    textSize = 20,
+                    textSize = 16,
                     textColor(context),
                     font = Font(R.font.poppins_regular),
                     textAlign = TextAlign.Start
@@ -199,9 +199,9 @@ fun CustomSwitch(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val switchWidth = 54.dp
-    val switchHeight = 28.dp
-    val thumbRadius = 15.dp
+    val switchWidth = 46.dp
+    val switchHeight = 24.dp
+    val thumbRadius = 12.dp
     val thumbPadding = 2.dp
 
     val thumbPosition = animateDpAsState(

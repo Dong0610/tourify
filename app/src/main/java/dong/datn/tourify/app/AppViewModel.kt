@@ -16,14 +16,18 @@ import dong.datn.tourify.R
 import dong.datn.tourify.firebase.Firestore
 import dong.datn.tourify.firebase.RealTime
 import dong.datn.tourify.model.ConversionChat
+import dong.datn.tourify.model.OtpCode
 import dong.datn.tourify.model.Places
 import dong.datn.tourify.model.generateRandomConversionChats
 import dong.datn.tourify.screen.client.ClientScreen
+import dong.datn.tourify.utils.MailSender
 import dong.datn.tourify.utils.SCHEDULE
 import dong.datn.tourify.utils.SERVICE
 import dong.datn.tourify.utils.USERS
+import dong.datn.tourify.utils.timeNow
 import dong.datn.tourify.widget.navigationTo
 import dong.duan.ecommerce.library.showToast
+import dong.duan.livechat.utility.generateNumericOTP
 import dong.duan.travelapp.model.Schedule
 import dong.duan.travelapp.model.Service
 import dong.duan.travelapp.model.Tour
@@ -41,6 +45,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AppViewModel @Inject constructor() : ViewModel() {
 
+    val currentEmailVerify= mutableStateOf("")
     val prevScreen= mutableStateOf("")
     val detailPlace = mutableStateOf<Places?>(null)
     val detailTour =
@@ -50,6 +55,9 @@ class AppViewModel @Inject constructor() : ViewModel() {
 
     var currentIndex = mutableStateOf(0)
     var isKeyboardVisible = mutableStateOf(false)
+    var otpCodeResponse =
+        mutableStateOf<OtpCode?>(null)
+
 
     val firestore = Firebase.firestore
     val auth = Firebase.auth
@@ -61,6 +69,7 @@ class AppViewModel @Inject constructor() : ViewModel() {
     fun fogetPassword(text: String) {
 
     }
+
 
     val listTour = mutableStateOf<MutableList<Tour>>(mutableListOf())
 
@@ -193,6 +202,20 @@ class AppViewModel @Inject constructor() : ViewModel() {
     fun gotoChatByTour(tour: Tour, nav: NavController) {
         currentChat.value = generateRandomConversionChats(1).get(0)
         nav.navigationTo(ClientScreen.ChatScreen.route)
+    }
+
+
+    fun sendVerificationEmail(email: String, nav: NavController) {
+        otpCodeResponse.value = OtpCode(timeNow(), generateNumericOTP())
+        MailSender.to(email).subject("Verify your account")
+            .body("Your otp code is: ${otpCodeResponse.value!!.otpCode}")
+            .success {
+             nav.navigationTo(ClientScreen.EnterOtpCodeScreen.route)
+                currentEmailVerify.value=email;
+            }
+            .fail {
+                showToast(appContext.getString(R.string.send_code_faild))
+            }.send()
     }
 
 }

@@ -81,4 +81,12 @@
     <string name="cancel">Cancel</string>
     <string name="Ok">Ok</string>
     <string name="change_theme">Change theme</string>
+    <string name="title_foget_pass">Enter your email account to reset  your password</string>
+    <string name="enter_your_email">Enter your email</string>
+    <string name="email">Email</string>
+    <string name="continues">Continue</string>
+    <string name="otp_verify">OTP Verification</string>
+    <string name="tt_mess_1">"Please check your email "</string>
+    <string name="tt_mess_2">" to see the verification code"</string>
+    <string name="send_code_faild">Send code fail!</string>
 </resources>

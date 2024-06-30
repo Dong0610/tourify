@@ -351,7 +351,7 @@ fun AppButton(
         Text(
             text = text,
             fontSize = 16.sp,
-            color = Color.White,
+            color =if(!isDisable) Color.White else black,
             fontFamily = FontFamily(Font(R.font.poppins_bold)),
             modifier = Modifier.padding(horizontal = 16.dp),
             textAlign = TextAlign.Center

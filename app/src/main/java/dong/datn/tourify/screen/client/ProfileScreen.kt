@@ -171,13 +171,6 @@ fun ProfileScreen(navController: NavHostController, viewModels: AppViewModel) {
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     ItemMenuProfie(
-                        icon = R.drawable.ic_rounder_security,
-                        label = context.getString(R.string.security)
-                    ) {
-
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    ItemMenuProfie(
                         icon = R.drawable.ic_rounder_payment,
                         label = context.getString(R.string.payment_medthod)
                     ) {
@@ -187,6 +180,13 @@ fun ProfileScreen(navController: NavHostController, viewModels: AppViewModel) {
                     ItemMenuProfie(
                         icon = R.drawable.ic_rounder_update,
                         label = context.getString(R.string.change_password)
+                    ) {
+                        navController.navigationTo(ClientScreen.ForgetPassScreen.route)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    ItemMenuProfie(
+                        icon = R.drawable.ic_rounder_security,
+                        label = context.getString(R.string.security)
                     ) {
 
                     }
@@ -231,8 +231,7 @@ fun ItemMenuProfie(icon: Int, label: String, callback: () -> Unit) {
             Icon(imageVector = Icons.Rounded.KeyboardArrowRight, contentDescription = "Next",tint = if(currentTheme==-1) white else black)
         }
         Box(modifier = Modifier
-            .fillMaxWidth(1f)
-            .height(50.dp)
+            .matchParentSize()
             .onClick {
                 callback.invoke()
             })
