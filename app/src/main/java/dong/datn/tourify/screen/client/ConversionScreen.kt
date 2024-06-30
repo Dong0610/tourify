@@ -43,6 +43,7 @@ import dong.datn.tourify.model.generateRandomConversionChats
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.black
 import dong.datn.tourify.ui.theme.darkGray
+import dong.datn.tourify.ui.theme.lawnGreen
 import dong.datn.tourify.ui.theme.lightGrey
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.transparent
@@ -59,6 +60,7 @@ import dong.duan.livechat.widget.SearchBox
 @Composable
 fun ConversionScreen(nav: NavController, viewModel: AppViewModel) {
     val context = LocalContext.current
+    viewModel.isKeyboardVisible.value = true
     val listConverChat = remember {
         mutableStateOf(generateRandomConversionChats(8))
     }
@@ -77,7 +79,7 @@ fun ConversionScreen(nav: NavController, viewModel: AppViewModel) {
                 }
 
                 TextView(
-                    context.getString(R.string.booking_now),
+                    context.getString(R.string.chat),
                     Modifier.weight(1f),
                     textSize = 20,
                     appColor,
@@ -105,7 +107,10 @@ fun ConversionScreen(nav: NavController, viewModel: AppViewModel) {
             Spacer(modifier = Modifier.height(12.dp))
             LazyColumn {
                 items(listConverChat.value) {
-
+                    ConversionItem(it = it) {
+                        nav.navigationTo(ClientScreen.ChatScreen.route)
+                        viewModel.currentChat.value= it
+                    }
                 }
             }
         }
@@ -123,10 +128,7 @@ fun ConversionItem(it: ConversionChat, callback: (ConversionChat) -> Unit) {
                 color = transparent,
                 shape = RoundedCornerShape(8.dp)
             )
-            .onClick {
 
-                callback.invoke(it)
-            }
     ) {
         Row(
             Modifier
@@ -170,6 +172,11 @@ fun ConversionItem(it: ConversionChat, callback: (ConversionChat) -> Unit) {
                 )
             }
         }
+        Box(modifier = Modifier
+            .matchParentSize().background(transparent)
+            .onClick {
+                callback.invoke(it)
+            })
     }
 }
 

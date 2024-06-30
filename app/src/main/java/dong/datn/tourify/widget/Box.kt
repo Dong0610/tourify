@@ -2,9 +2,12 @@ package dong.datn.tourify.widget
 
 import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -46,6 +49,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -70,6 +74,7 @@ import dong.datn.tourify.ui.theme.lightGrey
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.white
 import dong.datn.tourify.ui.theme.whiteSmoke
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -332,7 +337,7 @@ fun AppButton(
             .padding(vertical = 12.dp)
             .onClick {
                 if (isDisable == false) {
-                    if(loadding!=null){
+                    if (loadding != null) {
                         isLoading.value = 0
                     }
 
@@ -430,6 +435,23 @@ fun Modifier.onClick(onClick: () -> Unit): Modifier = composed {
         interactionSource = interactionSource,
         indication = null,
         onClick = onClick
+    )
+}
+
+
+@OptIn(ExperimentalFoundationApi::class)
+fun Modifier.onLongClick(onLongClick: () -> Unit): Modifier = composed {
+    val interactionSource = remember { MutableInteractionSource() }
+
+    this.combinedClickable(
+        onClick = {
+
+        },
+        onLongClick = {
+            onLongClick()
+        },
+        indication = null,
+        interactionSource = interactionSource
     )
 }
 

@@ -36,7 +36,7 @@ labelSmall = TextStyle(
 */
 )
 
-fun textColor(context: Context): Color {
+fun textColor(context: Context?=null): Color {
     return when (currentTheme) {
         -1 -> white
         1 -> black

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.navigation.NavController
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.firestore
 import com.google.firebase.firestore.ktx.firestore
@@ -16,9 +17,12 @@ import dong.datn.tourify.firebase.Firestore
 import dong.datn.tourify.firebase.RealTime
 import dong.datn.tourify.model.ConversionChat
 import dong.datn.tourify.model.Places
+import dong.datn.tourify.model.generateRandomConversionChats
+import dong.datn.tourify.screen.client.ClientScreen
 import dong.datn.tourify.utils.SCHEDULE
 import dong.datn.tourify.utils.SERVICE
 import dong.datn.tourify.utils.USERS
+import dong.datn.tourify.widget.navigationTo
 import dong.duan.ecommerce.library.showToast
 import dong.duan.travelapp.model.Schedule
 import dong.duan.travelapp.model.Service
@@ -184,6 +188,11 @@ class AppViewModel @Inject constructor() : ViewModel() {
             Log.i("getUserComment", "${it?.toJson()}")
             callback(it)
         }
+    }
+
+    fun gotoChatByTour(tour: Tour, nav: NavController) {
+        currentChat.value = generateRandomConversionChats(1).get(0)
+        nav.navigationTo(ClientScreen.ChatScreen.route)
     }
 
 }
