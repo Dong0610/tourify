@@ -134,7 +134,8 @@ fun SignUpScreen(nav: NavController, viewModels: AppViewModel) {
                 AppButton(
                     text = context.getString(R.string.sign_up),
                     modifier = Modifier,
-                    null
+                    isEnable = true,
+                    loading = null
                 ) {
                     stateButton.value = 0
 

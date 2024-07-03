@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import dong.datn.tourify.app.authSignIn
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.ui.theme.findActivity
 
@@ -50,6 +51,22 @@ fun noTitlebar(activity: Activity) {
 fun checkEmail(email: String): Boolean {
     val regexPattern = Regex("^[A-Za-z](.*)([@]{1})(.{1,})(\\.)(.{1,})")
     return regexPattern.matches(email)
+}
+
+
+
+
+
+
+fun checkPassword(password: String, newPassword: String, reNewPassword: String): Boolean {
+    val currentPass = authSignIn?.Password ?: return false
+
+    return when {
+        password != currentPass -> false
+        newPassword.length < 6 -> false
+        newPassword != reNewPassword -> false
+        else -> true
+    }
 }
 
 

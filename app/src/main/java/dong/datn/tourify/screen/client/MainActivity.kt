@@ -35,6 +35,7 @@ import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dong.datn.tourify.app.appViewModels
 import dong.datn.tourify.app.currentTheme
+import dong.datn.tourify.screen.staff.ConversionScreen
 import dong.datn.tourify.ui.theme.TourifyTheme
 import dong.datn.tourify.ui.theme.black
 import dong.datn.tourify.ui.theme.navigationBar
@@ -60,10 +61,8 @@ sealed class ClientScreen(var route: String) {
     data object DetailTourScreen : ClientScreen("detail_tour_client")
     data object DetailPlaceScreen : ClientScreen("detail_place_client")
     data object BookingNowScreen : ClientScreen("booking_now_client")
-    data object ConversionScreen : ClientScreen("conversion_screen")
+   // data object ConversionScreen : ClientScreen("conversion_screen")
     data object ChatScreen : ClientScreen("chat_screen")
-    data object ForgetPassScreen : ClientScreen("forget_pass_screen")
-    data object EnterOtpCodeScreen : ClientScreen("enter_otp_code")
     data object UpdatePasswordScreen : ClientScreen("update_password_screen")
 }
 
@@ -225,17 +224,12 @@ open class MainActivity : ComponentActivity() {
             animComposable(ClientScreen.BookingNowScreen.route) {
                 BookingNowScreen(navController, viewModels)
             }
-            animComposable(ClientScreen.ConversionScreen.route) {
-                ConversionScreen(navController, viewModels)
-            }
+
             animComposable(ClientScreen.ChatScreen.route) {
                 ChatScreen(navController, viewModels)
             }
-            animComposable(ClientScreen.ForgetPassScreen.route){
-                ForgetPassScreen(navController, viewModels)
-            }
-            animComposable(ClientScreen.EnterOtpCodeScreen.route){
-                EnterOtpScreen(nav = navController, viewModel =viewModels )
+            animComposable(ClientScreen.UpdatePasswordScreen.route){
+                UpdatePassScreen(navController, viewModels)
             }
 
         }

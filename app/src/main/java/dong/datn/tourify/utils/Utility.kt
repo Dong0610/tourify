@@ -93,18 +93,6 @@ fun Space(w: Int = 0, h: Int = 0) {
     )
 }
 
-fun colorByTheme(light: Color = Color.Black, dark: Color = Color.Black): Color {
-    return if (currentTheme == 1) light else dark
-}
-
-fun colorByTheme(light: String = "#000000", dark: String = "#ffffff", currentTheme: Int): Int {
-    return if (currentTheme == 1) fromColor(light) else fromColor(dark)
-}
-
-fun fromColor(code: String): Int {
-    val cleanedCode = code.replace("#", "").replace(" ", "")
-    return android.graphics.Color.parseColor("#$cleanedCode")
-}
 
 
 enum class ProgressBarColor(val gradientStart: Color, val gradientEnd: Color) {

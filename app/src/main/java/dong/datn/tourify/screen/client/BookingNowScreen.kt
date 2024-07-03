@@ -50,6 +50,7 @@ import dong.datn.tourify.app.appViewModels
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.firebase.RealTime
 import dong.datn.tourify.ui.theme.appColor
+import dong.datn.tourify.ui.theme.colorByTheme
 import dong.datn.tourify.ui.theme.gold
 import dong.datn.tourify.ui.theme.gray
 import dong.datn.tourify.ui.theme.lightGrey
@@ -61,7 +62,6 @@ import dong.datn.tourify.ui.theme.white
 import dong.datn.tourify.utils.CommonDivider
 import dong.datn.tourify.utils.SERVICE
 import dong.datn.tourify.utils.Space
-import dong.datn.tourify.utils.colorByTheme
 import dong.datn.tourify.utils.toCurrency
 import dong.datn.tourify.utils.widthPercent
 import dong.datn.tourify.widget.AppButton
@@ -293,9 +293,9 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
             }
             Space(h = 6)
             AppButton(
-                isDisable = isDisable.value,
+                isEnable = !isDisable.value,
                 text = context.getString(R.string.confirm),
-                modifier = Modifier.padding(horizontal = 16.dp), loadding = null
+                modifier = Modifier.padding(horizontal = 16.dp), loading = null
             ) {
                 isShowDialog.value = true
             }

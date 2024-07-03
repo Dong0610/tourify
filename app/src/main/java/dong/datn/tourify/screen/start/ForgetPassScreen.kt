@@ -1,4 +1,4 @@
-package dong.datn.tourify.screen.client
+package dong.datn.tourify.screen.start
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
+import dong.datn.tourify.screen.client.ClientScreen
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.utils.Space
@@ -92,7 +93,7 @@ fun ForgetPassScreen(nav: NavController, viewModel: AppViewModel) {
                     AppButton(
                         text = context.getString(R.string.continues),
                         modifier = Modifier,
-                        isDisable = !checkEmail(email.value)
+                        isEnable = !checkEmail(email.value)
                     ) {
                         viewModel.sendVerificationEmail(email.value,nav)
                     }
@@ -161,7 +162,7 @@ fun EnterOtpScreen(nav: NavController, viewModel: AppViewModel) {
                     AppButton(
                         text = context.getString(R.string.continues),
                         modifier = Modifier,
-                        isDisable = !checkEmail(email.value)
+                        isEnable = !checkEmail(email.value)
                     ) {
                         viewModel.sendVerificationEmail(email.value,nav)
                     }

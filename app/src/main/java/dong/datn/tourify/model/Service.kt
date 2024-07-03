@@ -5,46 +5,46 @@ import dong.datn.tourify.app.ContextProvider.Companion.appContext
 
 
 data class Transport(
-    var id: String? = "",
-    val description: String? = "",
+    var id: String =  "",
+    val description: String =  "",
 ) : BaseModel<Transport>()
 
 
 data class OtherServices(
-    var id: String? = "",
-    val description: String? = "",
+    var id: String =  "",
+    val description: String =  "",
 ) : BaseModel<OtherServices>()
 
 data class Food(
-    val id: String? = "",
-    val count: Int? = -1,
-    val price: Int? = 0,
-    val description: String? = ""
+    val id: String =  "",
+    val count: Int =  -1,
+    val price: Int =  0,
+    val description: String =  ""
 ) : BaseModel<Food>()
 
 data class Accommodation(
-    var id: String? = "",
-    val description: String? = ""
+    var id: String =  "",
+    val description: String =  ""
 ) : BaseModel<Accommodation>()
 
 data class IncludeService(
-    var id: String? = "",
-    var accommodation: Accommodation? = Accommodation(),
-    var transport: MutableList<Transport>? = mutableListOf(),
-    var food: MutableList<Food>? = mutableListOf(),
-    var otherServices: MutableList<OtherServices>? = mutableListOf()
+    var id: String =  "",
+    var accommodation: Accommodation =  Accommodation(),
+    var transport: MutableList<Transport> =  mutableListOf(),
+    var food: MutableList<Food> =  mutableListOf(),
+    var otherServices: MutableList<OtherServices> =  mutableListOf()
 ) : BaseModel<IncludeService>()
 
-data class NoteService(var id: String? = "", var content: String? = "") : BaseModel<NoteService>()
+data class NoteService(var id: String =  "", var content: String =  "") : BaseModel<NoteService>()
 data class Service(
-    var id: String? = "",
-    var time: String? = "",
-    var road: String? = "",
-    var vehicle: String? = "",
-    var name: String? = "",
-    var introduce: String? = "",
-    var includeService: IncludeService? = IncludeService(),
-    var noteService: MutableList<NoteService>? = mutableListOf()
+    var id: String =  "",
+    var time: String =  "",
+    var road: String =  "",
+    var vehicle: String =  "",
+    var name: String =  "",
+    var introduce: String =  "",
+    var includeService: IncludeService =  IncludeService(),
+    var noteService: MutableList<NoteService> =  mutableListOf()
 ) : BaseModel<Service>()
 
 

@@ -7,18 +7,19 @@ import java.time.format.DateTimeFormatter
 
 enum class ChatType {
     IMAGE,
-    MESSAGE
+    MESSAGE,
+    FIRST_MESSAGE,
 }
-
 data class Chat(
-    val idChat: String,
-    var content: String,
+    var idChat: String = "",
+    var content: String = "",
     var staffId: String = "",
     var clientId: String = "",
     var staffImage: String = "",
     var senderId: String = "",
     var clientImage: String = "",
     var time: String = "",
+    var tourId: String = "",
     var chatType: ChatType = ChatType.MESSAGE,
     var listImages: MutableList<String> = mutableListOf()
 ) : BaseModel<Chat>()

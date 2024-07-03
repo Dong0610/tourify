@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,9 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.rounded.LocationOn
-import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,10 +32,8 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
@@ -46,10 +41,8 @@ import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.darkGray
 import dong.datn.tourify.ui.theme.lightGrey
-import dong.datn.tourify.ui.theme.red
 import dong.datn.tourify.ui.theme.white
 import dong.datn.tourify.utils.heightPercent
-import dong.datn.tourify.utils.widthPercent
 import dong.datn.tourify.widget.IconView
 import dong.datn.tourify.widget.InnerImageIcon
 import dong.datn.tourify.widget.RoundedImage
@@ -61,6 +54,7 @@ import dong.duan.livechat.widget.SearchBox
 @Composable
 fun DiscoverScreen(navController: NavHostController, viewModels: AppViewModel) {
     val context = LocalContext.current
+    viewModels.isKeyboardVisible.value = false
     ViewParent(onBack = {
         viewModels.currentIndex.value = 0
         navController.navigate(ClientScreen.HomeClientScreen.route) {

@@ -89,4 +89,14 @@
     <string name="tt_mess_1">"Please check your email "</string>
     <string name="tt_mess_2">" to see the verification code"</string>
     <string name="send_code_faild">Send code fail!</string>
+    <string name="enter_your_pass">Enter your password</string>
+    <string name="enter_new_pass">Enter your new password</string>
+    <string name="enter_pass_again">Enter the password again</string>
+    <string name="update">Update</string>
+    <string name="your_pass_has_updated">Your password has been successfully updated</string>
+    <string name="eror_during_update">Error occurs during data updates</string>
+    <string name="error_title">Error</string>
+    <string name="get_more_info">I want to know more about this tour</string>
+    <string name="invalid_password">Incorrect password</string>
+    <string name="message">Message</string>
 </resources>

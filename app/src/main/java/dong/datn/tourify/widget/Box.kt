@@ -317,27 +317,27 @@ fun TextView(
 fun AppButton(
     text: String,
     modifier: Modifier,
-    loadding: Int? = null,
-    isDisable: Boolean = false,
+    loading: Int? = null,
+    isEnable: Boolean = false,
     onClick: () -> Unit
 ) {
     val isLoading = remember {
-        mutableStateOf(loadding)
+        mutableStateOf(loading)
     }
     Row(
         modifier = modifier
             .fillMaxWidth()
             .background(
                 brush = Brush.horizontalGradient(
-                    colors = if (!isDisable) listOf(
+                    colors = if (isEnable) listOf(
                         Color(0xFF02FF9A), Color(0xFF0622BD)
                     ) else listOf(lightGrey, lightGrey)
                 ), shape = RoundedCornerShape(12.dp)
             )
             .padding(vertical = 12.dp)
             .onClick {
-                if (isDisable == false) {
-                    if (loadding != null) {
+                if (isEnable) {
+                    if (isLoading.value != null) {
                         isLoading.value = 0
                     }
 
@@ -351,7 +351,7 @@ fun AppButton(
         Text(
             text = text,
             fontSize = 16.sp,
-            color =if(!isDisable) Color.White else black,
+            color =if(isEnable) Color.White else black,
             fontFamily = FontFamily(Font(R.font.poppins_bold)),
             modifier = Modifier.padding(horizontal = 16.dp),
             textAlign = TextAlign.Center

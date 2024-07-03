@@ -1,5 +1,7 @@
-package dong.datn.tourify.screen.client
+package dong.datn.tourify.screen.staff
 
+import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -20,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material3.Card
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -35,20 +38,24 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import com.google.firebase.firestore.DocumentChange
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
+import dong.datn.tourify.app.authSignIn
 import dong.datn.tourify.app.currentTheme
+import dong.datn.tourify.firebase.Firestore
 import dong.datn.tourify.model.ConversionChat
-import dong.datn.tourify.model.generateRandomConversionChats
+import dong.datn.tourify.screen.client.ClientScreen
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.black
 import dong.datn.tourify.ui.theme.darkGray
-import dong.datn.tourify.ui.theme.lawnGreen
 import dong.datn.tourify.ui.theme.lightGrey
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.transparent
+import dong.datn.tourify.utils.CONVERSION
 import dong.datn.tourify.utils.opacity
 import dong.datn.tourify.widget.IconView
+import dong.datn.tourify.widget.RoundedImage
 import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.ViewParent
 import dong.datn.tourify.widget.navigationTo
@@ -57,15 +64,61 @@ import dong.duan.ecommerce.library.showToast
 import dong.duan.livechat.widget.SearchBox
 
 
+@SuppressLint("MutableCollectionMutableState")
 @Composable
 fun ConversionScreen(nav: NavController, viewModel: AppViewModel) {
     val context = LocalContext.current
-    viewModel.isKeyboardVisible.value = true
-    val listConverChat = remember {
-        mutableStateOf(generateRandomConversionChats(8))
+    viewModel.isKeyboardVisible.value = false
+    val listConverChat = remember { mutableStateOf<MutableList<ConversionChat>>(mutableListOf()) }
+    val processedIds = remember { mutableStateOf<MutableSet<String>>(mutableSetOf()) }
+
+    LaunchedEffect(Unit) {
+        viewModel.firestore.collection(CONVERSION)
+            .whereEqualTo("clientId", authSignIn!!.UId)
+            .addSnapshotListener { snapshots, e ->
+                if (e != null) {
+                    Log.w("Firestore", "Listen failed.", e)
+                    return@addSnapshotListener
+                }
+
+                if (snapshots != null) {
+                    val updatedList = mutableListOf<ConversionChat>()
+                    val currentIds = mutableSetOf<String>()
+                    for (docChange in snapshots.documentChanges) {
+                        val conversionChat = docChange.document.toObject(ConversionChat::class.java).apply {
+                            converId = docChange.document.id
+                        }
+                        currentIds.add(conversionChat.converId)
+                        when (docChange.type) {
+                            DocumentChange.Type.ADDED -> {
+                                if (!processedIds.value.contains(conversionChat.converId)) {
+                                    updatedList.add(conversionChat)
+                                }
+                            }
+                            DocumentChange.Type.MODIFIED -> {
+                                val index = listConverChat.value.indexOfFirst { it.converId == conversionChat.converId }
+                                if (index != -1) {
+                                    listConverChat.value[index] = conversionChat
+                                } else {
+                                    updatedList.add(conversionChat)
+                                }
+                            }
+                            DocumentChange.Type.REMOVED -> {
+                                listConverChat.value.removeAll { it.converId == conversionChat.converId }
+                            }
+                        }
+                    }
+
+                    processedIds.value = currentIds
+                    listConverChat.value = (listConverChat.value + updatedList).distinct().toMutableList()
+                }
+            }
     }
+
+
+
     ViewParent(onBack = {
-        nav.navigationTo(ClientScreen.ProfileScreen.route)
+        nav.navigationTo(ClientScreen.DiscoveryScreen.route)
     }) {
         Column(Modifier.fillMaxSize()) {
             Row(
@@ -75,7 +128,7 @@ fun ConversionScreen(nav: NavController, viewModel: AppViewModel) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconView(modifier = Modifier, icon = Icons.Rounded.KeyboardArrowLeft) {
-                    nav.navigationTo(ClientScreen.ProfileScreen.route)
+                    nav.navigationTo(ClientScreen.DiscoveryScreen.route)
                 }
 
                 TextView(
@@ -110,6 +163,10 @@ fun ConversionScreen(nav: NavController, viewModel: AppViewModel) {
                     ConversionItem(it = it) {
                         nav.navigationTo(ClientScreen.ChatScreen.route)
                         viewModel.currentChat.value= it
+                        Firestore.updateAsync("$CONVERSION/${it.converId}", hashMapOf<String, Any>().apply {
+                            put("lastMessageClientRead", true)
+                            put("lastMessageStaffRead", true)
+                        })
                     }
                 }
             }
@@ -120,6 +177,7 @@ fun ConversionScreen(nav: NavController, viewModel: AppViewModel) {
 @Composable
 fun ConversionItem(it: ConversionChat, callback: (ConversionChat) -> Unit) {
     val context = LocalContext.current
+
     Box(
         modifier = Modifier
             .fillMaxWidth(1f)
@@ -136,16 +194,11 @@ fun ConversionItem(it: ConversionChat, callback: (ConversionChat) -> Unit) {
                 .padding(horizontal = 12.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ConversionIcon(
-                data = R.drawable.ic_notifications_active,
-                Modifier
-                    .padding(vertical = 2.dp)
-                    .size(46.dp),
-            )
+            RoundedImage(data = it.clientImage,Modifier.size(48.dp), shape = CircleShape)
             Spacer(modifier = Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 TextView(
-                    text = it.tourName,
+                    text = it.clientName,
                     color = textColor(context),
                     modifier = Modifier.fillMaxWidth(),
                     font = Font(R.font.poppins_semibold)
@@ -158,6 +211,7 @@ fun ConversionItem(it: ConversionChat, callback: (ConversionChat) -> Unit) {
                     } else {
                         if (it.lastMessageStaffRead) lightGrey else darkGray.opacity(0.5f)
                     },
+                    maxLine = 1,
                     modifier = Modifier.fillMaxWidth(),
                     font = Font(if (it.lastMessageStaffRead) R.font.poppins_regular else R.font.poppins_semibold),
                     textSize = 14
@@ -173,7 +227,8 @@ fun ConversionItem(it: ConversionChat, callback: (ConversionChat) -> Unit) {
             }
         }
         Box(modifier = Modifier
-            .matchParentSize().background(transparent)
+            .matchParentSize()
+            .background(transparent)
             .onClick {
                 callback.invoke(it)
             })

@@ -1,5 +1,6 @@
 package dong.datn.tourify.screen.client
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.rounded.KeyboardArrowRight
 import androidx.compose.material3.Icon
@@ -23,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
@@ -33,9 +36,11 @@ import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.app.authSignIn
 import dong.datn.tourify.app.currentTheme
+import dong.datn.tourify.screen.start.AccountActivity
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.black
 import dong.datn.tourify.ui.theme.darkGray
+import dong.datn.tourify.ui.theme.findActivity
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.white
 import dong.datn.tourify.ui.theme.whiteSmoke
@@ -79,7 +84,10 @@ fun ProfileScreen(navController: NavHostController, viewModels: AppViewModel) {
                     appColor, font = Font(R.font.poppins_semibold), textAlign = TextAlign.Center
                 )
                 IconView(modifier = Modifier, icon = R.drawable.ic_round_logout, icSize = 24) {
-
+                    context.findActivity()
+                        ?.startActivity(Intent(context, AccountActivity::class.java))
+                    authSignIn = null
+                    context.findActivity()?.finishAffinity()
                 }
             }
 
@@ -151,10 +159,10 @@ fun ProfileScreen(navController: NavHostController, viewModels: AppViewModel) {
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     ItemMenuProfie(
-                        icon = R.drawable.ic_rounder_chatbot,
-                        label = context.getString(R.string.chat)
+                        icon = Icons.Rounded.Favorite,
+                        label = context.getString(R.string.favorite)
                     ) {
-                        navController.navigationTo(ClientScreen.ConversionScreen.route)
+                        navController.navigationTo(ClientScreen.WishlistScreen.route)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     ItemMenuProfie(
@@ -181,7 +189,7 @@ fun ProfileScreen(navController: NavHostController, viewModels: AppViewModel) {
                         icon = R.drawable.ic_rounder_update,
                         label = context.getString(R.string.change_password)
                     ) {
-                        navController.navigationTo(ClientScreen.ForgetPassScreen.route)
+                        navController.navigationTo(ClientScreen.UpdatePasswordScreen.route)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     ItemMenuProfie(
@@ -200,7 +208,7 @@ fun ProfileScreen(navController: NavHostController, viewModels: AppViewModel) {
 }
 
 @Composable
-fun ItemMenuProfie(icon: Int, label: String, callback: () -> Unit) {
+fun ItemMenuProfie(icon: Any, label: String, callback: () -> Unit) {
     val context = LocalContext.current
     Box(
         Modifier
@@ -218,7 +226,20 @@ fun ItemMenuProfie(icon: Int, label: String, callback: () -> Unit) {
                 .padding(horizontal = 12.dp)
 
         ) {
-            Icon(painter = painterResource(id = icon), contentDescription = "Description", tint = if(currentTheme==-1) white else black)
+            if (icon is Int) {
+                Icon(
+                    painter = painterResource(id = icon),
+                    contentDescription = "Description",
+                    tint = if (currentTheme == -1) white else black
+                )
+            } else {
+                Icon(
+                    imageVector = icon as ImageVector,
+                    contentDescription = "Description",
+                    tint = if (currentTheme == -1) white else black
+                )
+            }
+
             Spacer(modifier = Modifier.width(12.dp))
             TextView(
                 text = label,

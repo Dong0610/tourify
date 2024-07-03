@@ -1,17 +1,17 @@
 package dong.duan.travelapp.model
 
 data class Schedule(
-    var Id: String? = "",
-    var ListTime: MutableList<DaySchedule>? = mutableListOf()
+    var Id: String =  "",
+    var ListTime: MutableList<DaySchedule> =  mutableListOf()
 ) : BaseModel<Schedule>()
 
 data class DaySchedule(
-    var Id: String? = "",
-    var Time: String? = "",
-    var ListDetail: MutableList<DetailSchedule>? = mutableListOf()
+    var Id: String =  "",
+    var Time: String =  "",
+    var ListDetail: MutableList<DetailSchedule> =  mutableListOf()
 ) : BaseModel<DaySchedule>()
 
-data class DetailSchedule(var Id: String? = "", var Time: String? = "", var Content: String? = "") :
+data class DetailSchedule(var Id: String =  "", var Time: String =  "", var Content: String =  "") :
     BaseModel<DetailSchedule>()
 
 

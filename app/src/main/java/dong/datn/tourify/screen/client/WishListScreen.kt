@@ -57,7 +57,7 @@ fun WishListScreen(navController: NavHostController, viewModels: AppViewModel) {
     val context = LocalContext.current
     ViewParent(onBack = {
         viewModels.currentIndex.value = 1
-        navController.navigate(ClientScreen.DiscoveryScreen.route) {
+        navController.navigate(ClientScreen.ProfileScreen.route) {
             popUpTo(0)
         }
 
@@ -71,7 +71,7 @@ fun WishListScreen(navController: NavHostController, viewModels: AppViewModel) {
             ) {
                 IconView(modifier = Modifier, icon = Icons.Rounded.KeyboardArrowLeft) {
                     viewModels.currentIndex.value = 1
-                    navController.navigate(ClientScreen.DiscoveryScreen.route) {
+                    navController.navigate(ClientScreen.ProfileScreen.route) {
                         popUpTo(0)
                     }
                 }
