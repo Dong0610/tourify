@@ -1,7 +1,8 @@
 [versions]
 accompanistPager = "0.12.0"
 accompanistSystemuicontroller = "0.30.1"
-agp = "8.4.0"
+accompanistSystemuicontrollerVersion = "<version>"
+agp = "8.2.0"
 foundation = "1.6.8"
 kotlin = "1.9.0"
 coreKtx = "1.10.1"
@@ -24,6 +25,7 @@ firebaseMessaging = "24.0.0"
 [libraries]
 accompanist-pager = { module = "com.google.accompanist:accompanist-pager", version.ref = "accompanistPager" }
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
+accompanist-systemuicontroller-vversion = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontrollerVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "foundation" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }

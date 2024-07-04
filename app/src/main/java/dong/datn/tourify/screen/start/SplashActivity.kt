@@ -56,7 +56,7 @@ class SplashActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         appViewModels = this.viewModel
         Firestore.getListData<Tour>(Firebase.firestore.collection("$TOUR")) {
-            viewModel.listTour.value = if (it == null) mutableListOf() else it
+            viewModel.listTour.value = it ?: mutableListOf()
         }
 
 

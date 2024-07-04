@@ -67,7 +67,7 @@ import dong.duan.travelapp.model.Tour
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun DetailPlaceScreen(nav: NavController, viewModel: AppViewModel, route: String) {
-    viewModel.isKeyboardVisible.value = true
+   
     val context = LocalContext.current
     val place = viewModel.detailPlace.value
     val pagerState = rememberPagerState(

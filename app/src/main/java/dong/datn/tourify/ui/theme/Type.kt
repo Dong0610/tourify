@@ -36,7 +36,7 @@ labelSmall = TextStyle(
 */
 )
 
-fun textColor(context: Context): Color {
+fun textColor(context: Context?=null): Color {
     return when (currentTheme) {
         -1 -> white
         1 -> black
@@ -52,6 +52,14 @@ fun navigationBar(context: Context):Color{
     }
 }
 
+fun boxColor():Color{
+    return when (currentTheme) {
+        1 -> whiteSmoke
+        -1 -> iconBackground
+        else -> appColor
+    }
+}
+
 fun navigationColor(isSelect:Boolean=false):Color{
     return when (currentTheme) {
         1 -> if (isSelect) appColor else lightGrey
@@ -60,4 +68,17 @@ fun navigationColor(isSelect:Boolean=false):Color{
     }
 }
 
+
+fun colorByTheme(light: Color = Color.Black, dark: Color = Color.Black): Color {
+    return if (currentTheme == 1) light else dark
+}
+
+fun colorByTheme(light: String = "#000000", dark: String = "#ffffff", currentTheme: Int): Int {
+    return if (currentTheme == 1) fromColor(light) else fromColor(dark)
+}
+
+fun fromColor(code: String): Int {
+    val cleanedCode = code.replace("#", "").replace(" ", "")
+    return android.graphics.Color.parseColor("#$cleanedCode")
+}
 

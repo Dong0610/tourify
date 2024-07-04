@@ -47,7 +47,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun BookingScreen(nav: NavController, viewModels: AppViewModel) {
     val context = LocalContext.current
-    viewModels.isKeyboardVisible.value = true
+    
     val isDarkTheme = remember {
         mutableStateOf(currentTheme == -1)
     }

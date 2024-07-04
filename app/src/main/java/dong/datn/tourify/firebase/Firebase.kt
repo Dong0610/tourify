@@ -615,6 +615,13 @@ object Firestore {
                 }
             }
     }
+    fun updateAsync(
+        path: String, data: HashMap<String, Any>, onFinish: (() -> Unit)? = null,
+        onError: ((String) -> Unit)? = null
+    ) {
+        val ref = FirebaseFirestore.getInstance().document(path)
+        updateAsync(ref, data, onFinish, onError)
+    }
 
     fun updateAsync(
         ref: DocumentReference,
@@ -622,19 +629,22 @@ object Firestore {
         onFinish: (() -> Unit)? = null,
         onError: ((String) -> Unit)? = null
     ) {
+        Log.d("updateAsync", "Starting update")
         GlobalScope.launch(Dispatchers.IO) {
-            ref.update(data!!)
-                .addOnSuccessListener {
-                    if (onFinish != null) {
-                        onFinish()
+            try {
+                ref.update(data)
+                    .addOnSuccessListener {
+                        Log.d("updateAsync", "Update successful")
+                        onFinish?.invoke()
                     }
-                }
-                .addOnFailureListener { exception ->
-                    if (onError != null) {
-                        onError(exception.message ?: "Unknown error")
+                    .addOnFailureListener { exception ->
+                        Log.e("updateAsync", "Update failed: ${exception.message}")
+                        onError?.invoke(exception.message ?: "Unknown error")
                     }
-                }
-                .await()
+            } catch (e: Exception) {
+                Log.e("updateAsync", "Exception: ${e.message}")
+                onError?.invoke(e.message ?: "Unknown error")
+            }
         }
     }
 
@@ -648,13 +658,7 @@ object Firestore {
         update(ref, data, onFinish, onError)
     }
 
-    fun updateAsync(
-        path: String, data: HashMap<String, Any>, onFinish: (() -> Unit)? = null,
-        onError: ((String) -> Unit)? = null
-    ) {
-        val ref = FirebaseFirestore.getInstance().document(path)
-        updateAsync(ref, data, onFinish, onError)
-    }
+
 
     fun delete(ref: DocumentReference, onFinish: () -> Unit, onError: (String) -> Unit) {
         ref.delete()
@@ -675,7 +679,6 @@ object Firestore {
                 .addOnFailureListener { exception ->
                     onError(exception.message ?: "Unknown error")
                 }
-                .await()
         }
     }
 

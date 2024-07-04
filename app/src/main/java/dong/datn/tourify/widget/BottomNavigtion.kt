@@ -1,8 +1,10 @@
 package dong.datn.tourify.widget
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Person
@@ -13,12 +15,17 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import com.guru.fontawesomecomposelib.FaIcon
+import com.guru.fontawesomecomposelib.FaIconType
+import com.guru.fontawesomecomposelib.FaIcons
 import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.screen.client.ClientScreen
 import dong.datn.tourify.ui.theme.navigationBar
@@ -26,13 +33,13 @@ import dong.datn.tourify.ui.theme.navigationColor
 import dong.datn.tourify.ui.theme.white
 
 enum class BottomNavigationItem(
-    var icon: ImageVector,
+    var icon: Any,
     var screen: String,
     var title: String
 ) {
     HOMES(Icons.Rounded.Home, ClientScreen.HomeClientScreen.route, "Home"),
     DISCOVER(Icons.Rounded.Search, ClientScreen.DiscoveryScreen.route, "Discovery"),
-    WISHLIST(Icons.Rounded.Favorite, ClientScreen.WishlistScreen.route, "Favorite"),
+    CHAT(FaIcons.FacebookMessenger, ClientScreen.ChatScreen.route, "Chats"),
     NOTIFICATION(
         Icons.Rounded.Notifications,
         ClientScreen.NotificationScreen.route,
@@ -43,10 +50,19 @@ enum class BottomNavigationItem(
 
 
 @Composable
-fun BottomNavigationBar(navController: NavHostController,viewModel: AppViewModel) {
+fun BottomNavigationBar(
+    navController: NavHostController,
+    viewModel: AppViewModel,
+    bottomBarState: MutableState<Boolean> = mutableStateOf(false)
+) {
     val navItems = BottomNavigationItem.entries
     val context = LocalContext.current
 
+    AnimatedVisibility(visible = bottomBarState.value,
+        enter = slideInVertically(initialOffsetY = { it }),
+        exit = slideOutVertically(targetOffsetY = { it }),
+        content =
+        {
 
     NavigationBar(
         modifier = Modifier.background(Color.Blue),
@@ -56,7 +72,23 @@ fun BottomNavigationBar(navController: NavHostController,viewModel: AppViewModel
         navItems.forEachIndexed { index, item ->
             NavigationBarItem(
                 alwaysShowLabel = true,
-                icon = { Icon(item.icon, contentDescription = item.title) },
+                icon = {
+                    when (item.icon) {
+                        is ImageVector -> Icon(
+                            item.icon as ImageVector,
+                            contentDescription = item.title
+                        )
+
+                        is Painter -> Icon(
+                            painter = item.icon as Painter,
+                            contentDescription = item.title
+                        )
+
+                        else -> {
+                            FaIcon(item.icon as FaIconType.BrandIcon, tint =  navigationColor(viewModel.currentIndex.value==index))
+                        }
+                    }
+                },
                 label = {
                     Text(
                         item.title, maxLines = 1
@@ -85,4 +117,5 @@ fun BottomNavigationBar(navController: NavHostController,viewModel: AppViewModel
             )
         }
     }
+        })
 }

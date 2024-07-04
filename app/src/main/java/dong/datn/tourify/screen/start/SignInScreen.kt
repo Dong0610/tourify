@@ -1,5 +1,6 @@
 package dong.datn.tourify.screen.start
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,15 +19,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
+import dong.datn.tourify.screen.client.MainActivity
 import dong.datn.tourify.ui.theme.appColor
+import dong.datn.tourify.ui.theme.findActivity
 import dong.datn.tourify.utils.heightPercent
 import dong.datn.tourify.widget.AppButton
-import dong.datn.tourify.widget.HorScrollView
 import dong.datn.tourify.widget.IconView
 import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.VerScrollView
@@ -37,9 +38,9 @@ import dong.duan.livechat.widget.InputValue
 @Composable
 fun SignInScreen(navController: NavHostController, viewModels: AppViewModel) {
     val context = LocalContext.current
-    val email = remember { mutableStateOf(TextFieldValue("")) }
-    val password = remember { mutableStateOf(TextFieldValue("")) }
-    val stateButton = remember { mutableStateOf(0) }
+    var email = remember { mutableStateOf("") }
+    val password = remember { mutableStateOf("") }
+    val stateButton = remember { mutableStateOf<Int?>(null) }
     ViewParent(onBack = {
         navController.navigate(AccountScreen.SignUpScreen.route) {
             popUpTo(0)
@@ -95,18 +96,18 @@ fun SignInScreen(navController: NavHostController, viewModels: AppViewModel) {
 
                     Spacer(modifier = Modifier.height(18.dp))
                     InputValue(
-                        value = email.value.text, hint = "Email", keyboardType = KeyboardType.Email
+                        value = email.value, hint = "Email", keyboardType = KeyboardType.Email
                     ) {
-                        email.value = TextFieldValue(it)
+                        email.value = it
                     }
 
                     Spacer(modifier = Modifier.height(18.dp))
                     InputValue(
-                        value = password.value.text,
+                        value = password.value,
                         hint = "Password",
                         keyboardType = KeyboardType.Password
                     ) {
-                        password.value = TextFieldValue(it)
+                        password.value = it
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -119,31 +120,34 @@ fun SignInScreen(navController: NavHostController, viewModels: AppViewModel) {
                             modifier = Modifier,
                             color = appColor
                         ) {
-                            viewModels.fogetPassword(email.value.text)
+                            viewModels.fogetPassword(email.value)
                         }
                     }
 
                     Spacer(modifier = Modifier.height(32.dp))
 
                     AppButton(
-                        text = context.getString(R.string.sign_in), modifier = Modifier, stateButton.value
+                        text = context.getString(R.string.sign_in),
+                        modifier = Modifier,
+                        stateButton.value,
+                        isEnable = true
                     ) {
                         stateButton.value = 0
-
-                        if (email.value.toString().isEmpty()) {
+                        if (email.value.isEmpty()) {
                             showToast("Enter email")
 
-                        } else if (email.value.toString().isEmpty()) {
+                        } else if (email.value.isEmpty()) {
                             showToast("Enter password")
                         } else {
                             viewModels.signInWithEmailPassword(
-                                email.value.toString(), password.value.toString()
-                            ) {
-                                if (it == 1) {
-                                    stateButton.value == 1
-                                } else {
-                                    stateButton.value = -1
+                                email.value, password.value
+                            ) { state ->
+                                stateButton.value == state
+                                if (state == 1) {
+                                    context.startActivity(Intent(context, MainActivity::class.java))
+                                    context.findActivity()!!.finishActivity(1);
                                 }
+
                             }
                         }
 
@@ -152,4 +156,5 @@ fun SignInScreen(navController: NavHostController, viewModels: AppViewModel) {
             }
         }
     }
+
 }

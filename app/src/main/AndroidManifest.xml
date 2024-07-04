@@ -28,7 +28,7 @@
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.Tourify"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="stateAlwaysHidden|adjustPan" />
         <activity
             android:name=".screen.start.AccountActivity"
             android:exported="true"

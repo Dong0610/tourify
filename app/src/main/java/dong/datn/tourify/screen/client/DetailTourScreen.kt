@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -44,6 +45,8 @@ import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.PagerState
 import com.google.accompanist.pager.rememberPagerState
+import com.guru.fontawesomecomposelib.FaIcon
+import com.guru.fontawesomecomposelib.FaIcons
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.app.appViewModels
@@ -54,12 +57,15 @@ import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.gold
 import dong.datn.tourify.ui.theme.gray
 import dong.datn.tourify.ui.theme.iconBackground
+import dong.datn.tourify.ui.theme.lime
 import dong.datn.tourify.ui.theme.red
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.white
 import dong.datn.tourify.ui.theme.whiteSmoke
 import dong.datn.tourify.utils.CommonProgressBar
 import dong.datn.tourify.utils.heightPercent
+import dong.datn.tourify.utils.toDp
+import dong.datn.tourify.utils.widthPercent
 import dong.datn.tourify.widget.ButtonNext
 import dong.datn.tourify.widget.DotIndicator
 import dong.datn.tourify.widget.InnerImageIcon
@@ -81,7 +87,7 @@ import kotlinx.coroutines.launch
 fun DetailTourScreen(nav: NavController, viewModel: AppViewModel, router: String) {
     val tour = viewModel.detailTour.value!!
     val context = LocalContext.current
-    viewModel.isKeyboardVisible.value = true
+   
     val pagerState = rememberPagerState(
         pageCount = tour.tourImage?.size!! ?: 0,
         initialOffscreenLimit = 2,
@@ -97,208 +103,233 @@ fun DetailTourScreen(nav: NavController, viewModel: AppViewModel, router: String
     )
 
     val coroutineScope = rememberCoroutineScope()
-
-    ViewParent(onBack = {
-        if(viewModel.prevScreen.value!=""){
-            nav.navigate(viewModel.prevScreen.value) {
-                nav.graph.startDestinationRoute?.let { route ->
-                    popUpTo(route) { saveState = true }
+    Box(Modifier.fillMaxSize(1f), contentAlignment = Alignment.BottomEnd) {
+        ViewParent(onBack = {
+            if (viewModel.prevScreen.value != "") {
+                nav.navigate(viewModel.prevScreen.value) {
+                    nav.graph.startDestinationRoute?.let { route ->
+                        popUpTo(route) { saveState = true }
+                    }
+                    launchSingleTop = true
+                    restoreState = true
                 }
-                launchSingleTop = true
-                restoreState = true
-            }
-        }
-        else{
-            nav.navigate(router) {
-                nav.graph.startDestinationRoute?.let { route ->
-                    popUpTo(route) { saveState = true }
+            } else {
+                nav.navigate(router) {
+                    nav.graph.startDestinationRoute?.let { route ->
+                        popUpTo(route) { saveState = true }
+                    }
+                    launchSingleTop = true
+                    restoreState = true
                 }
-                launchSingleTop = true
-                restoreState = true
             }
-        }
 
-    }) {
-        VerScrollView {
+        }) {
+            VerScrollView {
 
 
-            Column(
-                Modifier.fillMaxSize()
+                Column(
+                    Modifier.fillMaxSize()
 
-            ) {
-                Box(
-                    Modifier
-                        .fillMaxWidth(1f)
-                        .heightPercent(36f)
                 ) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth(1f)
+                            .heightPercent(36f)
+                    ) {
 
-                    HorizontalPager(
-                        state = pagerState
-                    ) { index ->
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        HorizontalPager(
+                            state = pagerState
+                        ) { index ->
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                RoundedImage(
+                                    tour.tourImage!!.get(index),
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                            }
+                        }
+                        Row(
+                            Modifier
+                                .fillMaxWidth(1f)
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            RoundedImage(
-                                tour.tourImage!!.get(index),
-                                contentScale = ContentScale.Crop,
+                            InnerImageIcon(
+                                modifier = Modifier, icon = Icons.Rounded.KeyboardArrowLeft
+                            ) {
+                                if (viewModel.prevScreen.value != "") {
+                                    nav.navigate(viewModel.prevScreen.value) {
+                                        nav.graph.startDestinationRoute?.let { route ->
+                                            popUpTo(route) { saveState = true }
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                } else {
+                                    nav.navigate(router) {
+                                        nav.graph.startDestinationRoute?.let { route ->
+                                            popUpTo(route) { saveState = true }
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                            }
+
+                            TextView(
+                                context.getString(R.string.detail),
+                                Modifier.weight(1f),
+                                textSize = 20,
+                                textColor(LocalContext.current),
+                                font = Font(R.font.poppins_semibold),
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.width(50.dp))
+                        }
+                    }
+                    Row(Modifier.fillMaxWidth(1f), horizontalArrangement = Arrangement.Center) {
+                        DotIndicator(pagerState)
+                    }
+                    TextView(
+                        text = tour.tourName ?: "",
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                        textSize = 18,
+                        color = textColor(context),
+                        font = Font(R.font.poppins_semibold)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        Modifier
+                            .padding(horizontal = 12.dp)
+                            .fillMaxWidth(1f),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row {
+                            TextView(
+                                text = tour.salePrice.toString() ?: "",
                                 modifier = Modifier,
-                                shape = RoundedCornerShape(8.dp)
+                                textSize = 18,
+                                color = if (currentTheme == 1) red else white,
+                                font = Font(R.font.poppins_medium)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            TextView(
+                                text = tour.tourPrice.toString() ?: "",
+                                modifier = Modifier.drawBehind {
+                                    val strokeWidthPx = 1.dp.toPx()
+                                    val verticalOffset = size.height / 2
+                                    drawLine(
+                                        color = gray,
+                                        strokeWidth = strokeWidthPx,
+                                        start = Offset(0f, verticalOffset),
+                                        end = Offset(size.width, verticalOffset)
+                                    )
+                                },
+                                textSize = 18,
+                                color = gray,
+                                font = Font(R.font.poppins_medium)
+                            )
+                        }
+                        Row {
+                            Icon(
+                                imageVector = Icons.Rounded.Star,
+                                contentDescription = "Star",
+                                tint = if (currentTheme == 1) gold else white
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            TextView(
+                                text = tour.star.toString() ?: "",
+                                modifier = Modifier,
+                                textSize = 18,
+                                color = gray,
+                                font = Font(R.font.poppins_medium)
                             )
                         }
                     }
-                    Row(
+                    TextView(
+                        text = tour.tourDescription ?: "",
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        textSize = 14,
+                        color = textColor(context),
+                        font = Font(R.font.poppins_regular)
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    ButtonNext(
+                        text = context.getString(R.string.booking_now),
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        nav.navigationTo(ClientScreen.BookingNowScreen.route)
+                        viewModel.bookingTourNow.value = tour
+                    }
+
+                    Column(
                         Modifier
-                            .fillMaxWidth(1f)
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .fillMaxWidth()
+                            .heightPercent(108f)
+                            .padding(16.dp)
                     ) {
-                        InnerImageIcon(
-                            modifier = Modifier, icon = Icons.Rounded.KeyboardArrowLeft
+                        CustomTabLayout(
+                            mutableListOf(
+                                context.getString(R.string.service),
+                                context.getString(R.string.schedule),
+                                context.getString(R.string.review)
+                            ), detailState
                         ) {
-                            if(viewModel.prevScreen.value!=""){
-                                nav.navigate(viewModel.prevScreen.value) {
-                                    nav.graph.startDestinationRoute?.let { route ->
-                                        popUpTo(route) { saveState = true }
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
+                            coroutineScope.launch {
+                                detailState.scrollToPage(it)
                             }
-                            else{
-                                nav.navigate(router) {
-                                    nav.graph.startDestinationRoute?.let { route ->
-                                        popUpTo(route) { saveState = true }
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
+
+                        }
+                        HorizontalPager(
+                            modifier = Modifier.fillMaxSize(), state = detailState
+                        ) { index ->
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                if (index == 0) {
+                                    LoadService(tour)
+                                } else if (index == 1) {
+                                    LoadSchedule(tour)
+                                } else {
+                                    LoadReview(tour)
                                 }
-                            }
-                        }
-
-                        TextView(
-                            context.getString(R.string.detail),
-                            Modifier.weight(1f),
-                            textSize = 20,
-                            textColor(LocalContext.current),
-                            font = Font(R.font.poppins_semibold),
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.width(50.dp))
-                    }
-                }
-                Row(Modifier.fillMaxWidth(1f), horizontalArrangement = Arrangement.Center) {
-                    DotIndicator(pagerState)
-                }
-                TextView(
-                    text = tour.tourName ?: "",
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                    textSize = 18,
-                    color = textColor(context),
-                    font = Font(R.font.poppins_semibold)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    Modifier
-                        .padding(horizontal = 12.dp)
-                        .fillMaxWidth(1f),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row {
-                        TextView(
-                            text = tour.salePrice.toString() ?: "",
-                            modifier = Modifier,
-                            textSize = 18,
-                            color = if (currentTheme == 1) red else white,
-                            font = Font(R.font.poppins_medium)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        TextView(
-                            text = tour.tourPrice.toString() ?: "", modifier = Modifier.drawBehind {
-                                val strokeWidthPx = 1.dp.toPx()
-                                val verticalOffset = size.height / 2
-                                drawLine(
-                                    color = gray,
-                                    strokeWidth = strokeWidthPx,
-                                    start = Offset(0f, verticalOffset),
-                                    end = Offset(size.width, verticalOffset)
-                                )
-                            }, textSize = 18, color = gray, font = Font(R.font.poppins_medium)
-                        )
-                    }
-                    Row {
-                        Icon(
-                            imageVector = Icons.Rounded.Star,
-                            contentDescription = "Star",
-                            tint = if (currentTheme == 1) gold else white
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        TextView(
-                            text = tour.star.toString() ?: "",
-                            modifier = Modifier,
-                            textSize = 18,
-                            color = gray,
-                            font = Font(R.font.poppins_medium)
-                        )
-                    }
-                }
-                TextView(
-                    text = tour.tourDescription ?: "",
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    textSize = 14,
-                    color = textColor(context),
-                    font = Font(R.font.poppins_regular)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-                ButtonNext(
-                    text = context.getString(R.string.booking_now),
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                ) {
-                    nav.navigationTo(ClientScreen.BookingNowScreen.route)
-                    viewModel.bookingTourNow.value = tour
-                }
-
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .heightPercent(108f)
-                        .padding(16.dp)
-                ) {
-                    CustomTabLayout(
-                        mutableListOf(
-                            context.getString(R.string.service),
-                            context.getString(R.string.schedule),
-                            context.getString(R.string.review)
-                        ), detailState
-                    ) {
-                        coroutineScope.launch {
-                            detailState.scrollToPage(it)
-                        }
-
-                    }
-                    HorizontalPager(
-                        modifier = Modifier.fillMaxSize(), state = detailState
-                    ) { index ->
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            if (index == 0) {
-                                LoadService(tour)
-                            } else if (index == 1) {
-                                LoadSchedule(tour)
-                            } else {
-                                LoadReview(tour)
                             }
                         }
                     }
                 }
             }
         }
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+        ) {
+            Box(modifier = Modifier
+                .size(54.dp)
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFF02FF9A), Color(0xFF0622BD)
+                        )
+                    ), shape = CircleShape
+                ), contentAlignment = Alignment.Center) {
+                FaIcon(faIcon = FaIcons.FacebookMessenger, tint = white)
+                Box(modifier = Modifier
+                    .matchParentSize()
+                    .onClick {
+                        viewModel.gotoChatByTour(tour,nav)
+                    })
+            }
+        }
     }
+
 }
 
 @Composable
@@ -534,7 +565,9 @@ fun ItemComment(comment: Comment) {
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                     ) {
                         TextView(
-                            text = context.getString(R.string.reply), modifier = Modifier, textSize = 14
+                            text = context.getString(R.string.reply),
+                            modifier = Modifier,
+                            textSize = 14
                         )
                     }
 

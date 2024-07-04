@@ -49,7 +49,6 @@ import dong.datn.tourify.app.appViewModels
 import dong.datn.tourify.app.authSignIn
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.model.Places
-import dong.datn.tourify.model.getListPlaces
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.darkGray
 import dong.datn.tourify.ui.theme.gray
@@ -78,8 +77,7 @@ import dong.duan.travelapp.model.Tour
 @Composable
 fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: String? = null) {
     val context = LocalContext.current
-    val places = getListPlaces()
-    viewModel.isKeyboardVisible.value = false
+    
     val listPlaces = remember {
         mutableStateOf<MutableList<Places>?>(null)
     }
@@ -91,6 +89,7 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
     viewModel.getAllPlaces {
         listPlaces.value = it
     }
+
     ViewParent {
         Column {
             Row(
@@ -107,14 +106,15 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
                 )
 
                 Spacer(modifier = Modifier.width(6.dp))
-                if (authSignIn == null) {
+                if (authSignIn != null) {
                     Column {
                         TextView(
                             context.getString(R.string.wellcome_back), Modifier, textSize = 13,
                             textColor(context), font = Font(R.font.poppins_regular)
                         )
                         TextView(
-                            context.getString(R.string.wellcome_back), Modifier, textSize = 16,
+                            authSignIn!!.Name, Modifier.widthPercent(50f), textSize = 16,
+
                             textColor(context), font = Font(R.font.poppins_medium)
                         )
                     }
@@ -310,7 +310,7 @@ fun ItemTopPlace(items: Places, modifier: Modifier, onSelect: (Places) -> Unit) 
             shape = RoundedCornerShape(12.dp)
         )
     ) {
-        RoundedImage(items.Image!!.get(0), Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+        RoundedImage(items.Image?.get(0), Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
         Column {
             Spacer(modifier = Modifier.weight(1f))
             TextView(
@@ -398,7 +398,7 @@ fun ItemTopBucketTour(tour: Tour, onTouch: (Tour) -> Unit) {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 TextView(
-                    text = "100",
+                    text = tour.tourAddress.toString(),
                     modifier = Modifier,
                     font = Font(R.font.poppins_medium),
                     color = lightGrey

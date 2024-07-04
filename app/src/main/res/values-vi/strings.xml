@@ -48,12 +48,13 @@
     <string name="fe_male">Nữ</string>
     <string name="undisclosed">Không tiết lộ</string>
     <string name="sex">Giới tính</string>
-    <string name="notification_post">Thông báo bài đăng</string>
+    <string name="notification_post">Thông báo ứng dụng</string>
     <string name="cause_error_try_again">Lỗi, vui lòng thử lại</string>
     <string name="food">Thức ăn</string>
     <string name="transport">Vận chuyển</string>
     <string name="reply">Trả lời</string>
     <string name="title_activity_add_data">Thêm dữ liệu</string>
     <string name="all_tour">Tất cả các tour</string>
+    <string name="change_theme">Giao diện</string>
 
 </resources>

@@ -1,27 +1,27 @@
 package dong.duan.travelapp.model
 
 data class TourTime(
-    var timeID: String? = "",
-    var tourTime: String? = "",
-    var startTime: String? = "",
-    var endTime: String? = "",
-    var count: Int? = 0,
+    var timeID: String =  "",
+    var tourTime: String =  "",
+    var startTime: String =  "",
+    var endTime: String =  "",
+    var count: Int =  0,
 )
 
 data class Tour(
-    var tourID: String? = "",
-    var tourName: String? = "",
-    var tourDescription: String? = "",
-    var tourImage: MutableList<String>? = mutableListOf(),
-    var tourPrice: Double? = 0.0,
-    var salePrice: Double? = 0.0,
-    var success: Int? = 0,
-    var cancel: Int? = 0,
-    var countTour: String? = "",
-    var star: String? = "",
-    var countRating: String? = "",
-    var tourTime: MutableList<TourTime>? = mutableListOf(),
-    var tourAddress: String? = "",
+    var tourID: String =  "",
+    var tourName: String =  "",
+    var tourDescription: String =  "",
+    var tourImage: MutableList<String> =  mutableListOf(),
+    var tourPrice: Double =  0.0,
+    var salePrice: Double =  0.0,
+    var success: Int =  0,
+    var cancel: Int =  0,
+    var countTour: String =  "",
+    var star: String =  "",
+    var countRating: String =  "",
+    var tourTime: MutableList<TourTime> =  mutableListOf(),
+    var tourAddress: String =  "",
     var tourCategory: MutableList<Category> = mutableListOf()
 ) : BaseModel<Tour>()
 

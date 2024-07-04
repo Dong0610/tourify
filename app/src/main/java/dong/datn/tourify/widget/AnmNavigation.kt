@@ -7,6 +7,7 @@ import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
@@ -21,6 +22,7 @@ fun NavGraphBuilder.animComposable(
     delay: Int = 700,
     content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
 ) {
+
 
     composable(route,
         enterTransition = {
