@@ -56,7 +56,7 @@ import dong.duan.livechat.widget.InputValue
 
 @Composable
 fun UpdatePassScreen(nav: NavController, viewModel: AppViewModel) {
-    viewModel.isKeyboardVisible.value = true
+   
     val isShowDialog = remember {
         mutableStateOf(false)
     }

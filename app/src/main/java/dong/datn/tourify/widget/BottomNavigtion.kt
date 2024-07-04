@@ -1,5 +1,8 @@
 package dong.datn.tourify.widget
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Home
@@ -12,6 +15,8 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
@@ -45,10 +50,19 @@ enum class BottomNavigationItem(
 
 
 @Composable
-fun BottomNavigationBar(navController: NavHostController,viewModel: AppViewModel) {
+fun BottomNavigationBar(
+    navController: NavHostController,
+    viewModel: AppViewModel,
+    bottomBarState: MutableState<Boolean> = mutableStateOf(false)
+) {
     val navItems = BottomNavigationItem.entries
     val context = LocalContext.current
 
+    AnimatedVisibility(visible = bottomBarState.value,
+        enter = slideInVertically(initialOffsetY = { it }),
+        exit = slideOutVertically(targetOffsetY = { it }),
+        content =
+        {
 
     NavigationBar(
         modifier = Modifier.background(Color.Blue),
@@ -103,4 +117,5 @@ fun BottomNavigationBar(navController: NavHostController,viewModel: AppViewModel
             )
         }
     }
+        })
 }

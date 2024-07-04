@@ -78,7 +78,7 @@ import dong.duan.travelapp.model.Tour
 @Composable
 fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
     val context = LocalContext.current
-    viewModels.isKeyboardVisible.value = true
+    
 
     val tour = remember {
         mutableStateOf(appViewModels?.bookingTourNow?.value)

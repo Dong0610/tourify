@@ -54,7 +54,7 @@ import dong.duan.livechat.widget.SearchBox
 @Composable
 fun DiscoverScreen(navController: NavHostController, viewModels: AppViewModel) {
     val context = LocalContext.current
-    viewModels.isKeyboardVisible.value = false
+   
     ViewParent(onBack = {
         viewModels.currentIndex.value = 0
         navController.navigate(ClientScreen.HomeClientScreen.route) {

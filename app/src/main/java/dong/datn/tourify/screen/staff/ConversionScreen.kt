@@ -68,7 +68,7 @@ import dong.duan.livechat.widget.SearchBox
 @Composable
 fun ConversionScreen(nav: NavController, viewModel: AppViewModel) {
     val context = LocalContext.current
-    viewModel.isKeyboardVisible.value = false
+    
     val listConverChat = remember { mutableStateOf<MutableList<ConversionChat>>(mutableListOf()) }
     val processedIds = remember { mutableStateOf<MutableSet<String>>(mutableSetOf()) }
 

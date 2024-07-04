@@ -1,6 +1,7 @@
 package dong.datn.tourify.app
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +28,8 @@ import dong.datn.tourify.model.ConversionChat
 import dong.datn.tourify.model.OtpCode
 import dong.datn.tourify.model.Places
 import dong.datn.tourify.screen.client.ClientScreen
+import dong.datn.tourify.screen.client.MainActivity
+import dong.datn.tourify.ui.theme.findActivity
 import dong.datn.tourify.utils.CHAT
 import dong.datn.tourify.utils.CONVERSION
 import dong.datn.tourify.utils.SCHEDULE
@@ -67,7 +70,6 @@ class AppViewModel @Inject constructor() : ViewModel() {
         currentChat.value = null
     }
     var currentIndex = mutableStateOf(0)
-    var isKeyboardVisible = mutableStateOf(false)
     var otpCodeResponse =
         mutableStateOf<OtpCode?>(null)
 
@@ -182,9 +184,8 @@ class AppViewModel @Inject constructor() : ViewModel() {
 
     fun signInWithEmailPassword(email: String, password: String, onSuccess: (Int) -> Unit) {
         val trimmedEmail = email.trim()
-        val trimmedPassword = "100129"
         Firebase.firestore.collection("USERS")
-            .whereEqualTo("email", "123@gmail.com")
+            .whereEqualTo("email", trimmedEmail)
             .get()
             .addOnSuccessListener {
                 if (it.isEmpty) {
@@ -192,16 +193,15 @@ class AppViewModel @Inject constructor() : ViewModel() {
                 } else {
                     val user = it.documents.get(0).toObject(Users::class.java)
                     var userFound = false
-
-                    Log.d("SignIn", "Checking user: $user")
-                    if (user!!.Password == trimmedPassword) {
+                    if (user!!.Password == password) {
                         userFound = true
                         authSignIn = user
                         showToast(appContext.getString(R.string.login_success))
-                        onSuccess.invoke(1)
                         GlobalScope.launch(Dispatchers.Main) {
                             updateNewToken(user.UId!!)
                         }
+                        onSuccess.invoke(1)
+
 
                     }
                     if (!userFound) {

@@ -77,7 +77,7 @@ import dong.duan.travelapp.model.Tour
 @Composable
 fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: String? = null) {
     val context = LocalContext.current
-    viewModel.isKeyboardVisible.value = false
+    
     val listPlaces = remember {
         mutableStateOf<MutableList<Places>?>(null)
     }

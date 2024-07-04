@@ -64,7 +64,7 @@ import java.util.Calendar
 @Composable
 fun UpdateProfileScreen(nav: NavController, viewModels: AppViewModel) {
     val context = LocalContext.current
-    viewModels.isKeyboardVisible.value = true
+    
 
     val userName = remember { mutableStateOf(TextFieldValue(authSignIn?.Name ?: "")) }
     val addresses = remember { mutableStateOf(TextFieldValue(authSignIn?.Address ?: "")) }

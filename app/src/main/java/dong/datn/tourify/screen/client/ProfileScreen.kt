@@ -56,7 +56,7 @@ import dong.datn.tourify.widget.onClick
 @Composable
 fun ProfileScreen(navController: NavHostController, viewModels: AppViewModel) {
     val context = LocalContext.current
-    viewModels.isKeyboardVisible.value = false
+
     ViewParent(onBack = {
         viewModels.currentIndex.value = 3
         navController.navigate(ClientScreen.NotificationScreen.route) {

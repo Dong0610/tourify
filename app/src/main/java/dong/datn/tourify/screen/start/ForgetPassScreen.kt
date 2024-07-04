@@ -40,7 +40,7 @@ import dong.duan.livechat.widget.InputValue
 
 @Composable
 fun ForgetPassScreen(nav: NavController, viewModel: AppViewModel) {
-    viewModel.isKeyboardVisible.value = true
+   
     val context = LocalContext.current
     val email = remember {
         mutableStateOf("")
@@ -106,7 +106,7 @@ fun ForgetPassScreen(nav: NavController, viewModel: AppViewModel) {
 
 @Composable
 fun EnterOtpScreen(nav: NavController, viewModel: AppViewModel) {
-    viewModel.isKeyboardVisible.value = true
+   
     val context = LocalContext.current
     val email = remember {
         mutableStateOf("")

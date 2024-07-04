@@ -87,7 +87,7 @@ import kotlinx.coroutines.launch
 fun DetailTourScreen(nav: NavController, viewModel: AppViewModel, router: String) {
     val tour = viewModel.detailTour.value!!
     val context = LocalContext.current
-    viewModel.isKeyboardVisible.value = true
+   
     val pagerState = rememberPagerState(
         pageCount = tour.tourImage?.size!! ?: 0,
         initialOffscreenLimit = 2,

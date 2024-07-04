@@ -144,7 +144,8 @@ fun SignInScreen(navController: NavHostController, viewModels: AppViewModel) {
                             ) { state ->
                                 stateButton.value == state
                                 if (state == 1) {
-
+                                    context.startActivity(Intent(context, MainActivity::class.java))
+                                    context.findActivity()!!.finishActivity(1);
                                 }
 
                             }
@@ -154,10 +155,6 @@ fun SignInScreen(navController: NavHostController, viewModels: AppViewModel) {
                 }
             }
         }
-    }
-    if (stateButton.value == 1) {
-        context.startActivity(Intent(context, MainActivity::class.java))
-        context.findActivity()!!.finishActivity(1);
     }
 
 }

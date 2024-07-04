@@ -97,6 +97,8 @@ fun TourifyTheme(
                 or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
 
 
+
+
     SideEffect {
         systemUiController?.hide(flags)
         systemUiController?.isAppearanceLightStatusBars = darkTheme
@@ -105,7 +107,6 @@ fun TourifyTheme(
 
 
     }
-
 
     MaterialTheme(
         colorScheme = colorScheme,
