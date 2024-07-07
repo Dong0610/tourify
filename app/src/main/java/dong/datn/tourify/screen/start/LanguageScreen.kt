@@ -35,7 +35,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import dong.datn.tourify.R
-import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.app.authSignIn
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.app.isSetUpLanguage
@@ -102,6 +101,7 @@ fun LanguageScreen(navController: NavHostController, onBack: () -> Unit) {
                     IconView(modifier = Modifier, icon = Icons.Rounded.Check) {
                         LanguageUtil.changeLang(selectedLanguage.value.code, context)
                         navController.navigate(AccountScreen.SignInScreen.route) {
+                            isSetUpLanguage = true
                             popUpTo(0)
                         }
                     }

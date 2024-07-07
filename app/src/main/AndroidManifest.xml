@@ -6,6 +6,7 @@
         android:name="android.permission.ACCESS_FINE_LOCATION"
         tools:ignore="CoarseFineLocation" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
     <application
         android:name=".app.ContextProvider"
@@ -18,6 +19,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Tourify"
         tools:targetApi="31">
+        <activity
+            android:name=".screen.staff.StaffActivity"
+            android:exported="false"
+            android:label="@string/title_activity_staff"
+            android:theme="@style/Theme.Tourify" />
         <activity
             android:name=".test.AddDataActivity"
             android:exported="true"
@@ -47,6 +53,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <meta-data
+            android:name="com.facebook.sdk.ApplicationId"
+            android:value="@string/facebook_app_id" />
+        <meta-data
+            android:name="com.facebook.sdk.ClientToken"
+            android:value="@string/facebook_client_token" />
+        <meta-data
+            android:name="com.google.android.gms.auth.api.credentials.CREDENTIAL_PICKER"
+            android:value="false" />
+        <meta-data
+            android:name="com.google.android.gms.auth.api.credentials.CREDENTIAL_HINT_PICKER"
+            android:value="false" />
 
         <service
             android:name=".firebase.FirebaseMessageService"

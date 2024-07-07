@@ -93,6 +93,21 @@ fun Space(w: Int = 0, h: Int = 0) {
     )
 }
 
+@Composable
+fun SpaceH(h: Int) {
+    Spacer(
+        modifier = Modifier
+            .height(h.dp)
+    )
+}
+@Composable
+fun SpaceW(w: Int) {
+    Spacer(
+        modifier = Modifier
+            .width(w.dp)
+    )
+}
+
 
 
 enum class ProgressBarColor(val gradientStart: Color, val gradientEnd: Color) {

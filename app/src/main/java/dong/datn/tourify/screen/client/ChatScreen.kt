@@ -19,30 +19,30 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.rounded.Send
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -51,6 +51,7 @@ import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.app.authSignIn
 import dong.datn.tourify.app.currentTheme
+import dong.datn.tourify.app.lastChatTour
 import dong.datn.tourify.firebase.Firestore
 import dong.datn.tourify.model.Chat
 import dong.datn.tourify.model.ChatType
@@ -59,7 +60,6 @@ import dong.datn.tourify.ui.theme.boxColor
 import dong.datn.tourify.ui.theme.colorByTheme
 import dong.datn.tourify.ui.theme.darkGray
 import dong.datn.tourify.ui.theme.iconBackground
-import dong.datn.tourify.ui.theme.red
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.transparent
 import dong.datn.tourify.ui.theme.whiteSmoke
@@ -79,167 +79,19 @@ import dong.duan.travelapp.model.Tour
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-//
-//@SuppressLint("MutableCollectionMutableState")
-//@Composable
-//fun ChatScreen(nav: NavController, viewModel: AppViewModel) {
-//    val context = LocalContext.current
-//    val listConverChat = viewModel.listConverChat
-//    val tourData = remember {
-//        mutableStateOf<Tour?>(null)
-//    }
-//    LaunchedEffect(viewModel.currentChat.value) {
-//        viewModel.startListeningForNewChats()
-//
-//        if (viewModel.lastTourIdByChat.value != null && viewModel.lastTourIdByChat.value != "") {
-//
-//            Firestore.fetchById<Tour>("$TOUR/${viewModel.lastTourIdByChat.value}") {
-//                tourData.value = it
-//            }
-//        }
-//
-//    }
-//    val contentChat= remember {
-//        mutableStateOf("")
-//    }
-//    viewModel.isKeyboardVisible.value = true
-//    val scrollState =
-//        rememberLazyListState(initialFirstVisibleItemIndex = listConverChat.value.size)
-//    ViewParent(onBack = {
-//        nav.navigationTo(ClientScreen.DiscoveryScreen.route)
-//        viewModel.resetCurrentChat()
-//    }) {
-//        Column(Modifier.fillMaxSize()) {
-//            Row(
-//                Modifier
-//                    .fillMaxWidth(1f)
-//                    .padding(horizontal = 16.dp, vertical = 8.dp),
-//                verticalAlignment = Alignment.CenterVertically
-//            ) {
-//                IconView(modifier = Modifier, icon = Icons.Rounded.KeyboardArrowLeft) {
-//                    nav.navigationTo(ClientScreen.DiscoveryScreen.route)
-//                    viewModel.resetCurrentChat()
-//                }
-//                Space(w = 8)
-//                RoundedImage(
-//                    data = if (tourData.value != null) tourData.value!!.tourImage.get(0) else R.drawable.img_test_data_2,
-//                    Modifier.size(40.dp),
-//                    shape = RoundedCornerShape(30.dp)
-//                )
-//                Space(w = 12)
-//                TextView(
-//                    if (tourData.value != null) tourData.value?.tourName.toString() else context.getString(
-//                        R.string.chat
-//                    ),
-//                    Modifier.weight(1f),
-//                    textSize = 16,
-//                    maxLine = 1,
-//                    color = appColor,
-//                    font = Font(R.font.poppins_semibold),
-//                    textAlign = TextAlign.Start
-//                )
-//
-//                IconView(modifier = Modifier, icon = Icons.Rounded.Info) {
-//                    nav.navigationTo(ClientScreen.DiscoveryScreen.route)
-//                }
-//
-//            }
-//            Spacer(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .height(1.dp)
-//                    .background(color = Color(0xFFdddddd), shape = RectangleShape)
-//            )
-//            Space(h = 6)
-//            Column(
-//                modifier = Modifier
-//                    .padding(horizontal = 16.dp)
-//                    .weight(1f)
-//                    .fillMaxWidth(),
-//                verticalArrangement = Arrangement.Bottom
-//            ) {
-//                LazyColumn(
-//                    state = scrollState,
-//                    modifier = Modifier.wrapContentHeight()
-//                ) {
-//                    itemsIndexed(listConverChat.value) { index, it ->
-//                        if (it.chatType == ChatType.FIRST_MESSAGE) {
-//                            if (index != 0) {
-//                                Space(h = 12)
-//                                Row(Modifier.fillMaxWidth()) {
-//                                    TextView(
-//                                        text = it.time,
-//                                        modifier = Modifier,
-//                                        font = Font(R.font.poppins_regular),
-//                                        color = colorByTheme(darkGray, whiteSmoke),
-//                                        textSize = 14, textAlign = TextAlign.Center
-//                                    )
-//                                }
-//                            }
-//                            InformationAboutTour(it.tourId) {
-//                                if (it != null) {
-//                                    viewModel.detailTour.value = it;
-//                                    nav.navigationTo(
-//                                        ClientScreen.DetailTourScreen.route,
-//                                        ClientScreen.ChatScreen.route
-//                                    )
-//                                }
-//                            }
-//                            Space(h = 6)
-//                            ItemMessageChat(it)
-//                        } else {
-//                            ItemMessageChat(it)
-//                        }
-//
-//                        Space(h = 6)
-//                    }
-//                }
-//            }
-//
-//            Row(
-//                Modifier
-//                    .fillMaxWidth()
-//                    .padding(horizontal = 16.dp)
-//                    .height(80.dp), verticalAlignment = Alignment.CenterVertically
-//            ) {
-//                Row(
-//                    Modifier
-//                        .weight(1f)
-//                        .background(color = boxColor(), shape = RoundedCornerShape(40.dp))
-//                ) {
-//                    InputValue(value = contentChat.value, modifier = Modifier.fillMaxWidth(), hint = context.getString(R.string.message)) {
-//                        contentChat.value=it
-//                    }
-//                }
-//                Box(
-//                    modifier = Modifier
-//                        .background(boxColor(), CircleShape)
-//                        .size(42.dp), contentAlignment = Alignment.Center
-//                ) {
-//                    Icon(
-//                        imageVector = Icons.Rounded.Send,
-//                        contentDescription = "Send",
-//                        tint = appColor,
-//                        modifier = Modifier
-//                            .rotate(-25f)
-//
-//                    )
-//                }
-//
-//            }
-//
-//
-//        }
-//    }
-//}
+@Composable
+fun keyboardAsState(): State<Boolean> {
+    val isImeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    return rememberUpdatedState(isImeVisible)
+}
 
-@SuppressLint("MutableCollectionMutableState", "UnusedMaterial3ScaffoldPaddingParameter")
+@SuppressLint("UnrememberedMutableState", "CoroutineCreationDuringComposition")
 @Composable
 fun ChatScreen(nav: NavController, viewModel: AppViewModel) {
     val context = LocalContext.current
-    val listConverChat = viewModel.listConverChat
+    val listChatCurrent = viewModel.listChatCurrent
     val tourData = remember { mutableStateOf<Tour?>(null) }
-
+    val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(viewModel.currentChat.value) {
         viewModel.startListeningForNewChats()
 
@@ -249,22 +101,30 @@ fun ChatScreen(nav: NavController, viewModel: AppViewModel) {
             }
         }
     }
-
+    val lazyColumnListState = rememberLazyListState()
+    LaunchedEffect(listChatCurrent.value.size) {
+        coroutineScope.launch {
+            if (listChatCurrent.value.isNotEmpty()) {
+                lazyColumnListState.animateScrollToItem(listChatCurrent.value.lastIndex + 4)
+            }
+        }
+    }
+    val lastIdTour = remember {
+        mutableStateOf("")
+    }
     val contentChat = remember { mutableStateOf("") }
-    viewModel.isKeyboardVisible.value = true
-    val scrollState =
-        rememberLazyListState(initialFirstVisibleItemIndex = listConverChat.value.size)
 
-    ViewParent(onBack = {
-        nav.navigationTo(ClientScreen.DiscoveryScreen.route)
+    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+    val bottomPadding = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
+
+
+    ViewParent(Modifier.fillMaxSize(), onBack = {
+        nav.navigationTo(ClientScreen.HomeClientScreen.route)
         viewModel.resetCurrentChat()
-    }) {
-        Scaffold(content = {
+    }, propagateMinConstraints = false) {
             Column(
                 Modifier
-                    .fillMaxSize()
-
-
+                    .matchParentSize()
             ) {
                 Row(
                     Modifier
@@ -273,18 +133,20 @@ fun ChatScreen(nav: NavController, viewModel: AppViewModel) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconView(modifier = Modifier, icon = Icons.Rounded.KeyboardArrowLeft) {
-                        nav.navigationTo(ClientScreen.DiscoveryScreen.route)
+                        nav.navigationTo(ClientScreen.HomeClientScreen.route)
                         viewModel.resetCurrentChat()
                     }
                     Space(w = 8)
                     RoundedImage(
-                        data = tourData.value?.tourImage?.get(0) ?: R.drawable.img_test_data_2,
+                        data = if (lastChatTour == null) R.drawable.img_test_data_2 else lastChatTour!!.tourImage.get(
+                            0
+                        ),
                         Modifier.size(40.dp),
                         shape = RoundedCornerShape(30.dp)
                     )
                     Space(w = 12)
                     TextView(
-                        tourData.value?.tourName.toString() ?: context.getString(R.string.chat),
+                        if (lastChatTour == null) "Null" else lastChatTour!!.tourName,
                         Modifier.weight(1f),
                         textSize = 16,
                         maxLine = 1,
@@ -292,10 +154,7 @@ fun ChatScreen(nav: NavController, viewModel: AppViewModel) {
                         font = Font(R.font.poppins_semibold),
                         textAlign = TextAlign.Start
                     )
-
-                    IconView(modifier = Modifier, icon = Icons.Rounded.Info) {
-                        nav.navigationTo(ClientScreen.DiscoveryScreen.route)
-                    }
+                    Space(w = 40)
                 }
                 Spacer(
                     modifier = Modifier
@@ -305,22 +164,31 @@ fun ChatScreen(nav: NavController, viewModel: AppViewModel) {
                 )
                 Space(h = 6)
 
+                val verScrollViewHeight = if (keyboardAsState().value) {
+                    screenHeight - bottomPadding - 70.dp - 20.dp
+                } else {
+                    screenHeight - 70.dp - 20.dp
+                }
+
                 Column(
                     modifier = Modifier
+                        .fillMaxWidth()
                         .padding(horizontal = 16.dp)
-                        .weight(1f)
-                        .fillMaxWidth(),
+                        .height(verScrollViewHeight),
                     verticalArrangement = Arrangement.Bottom
                 ) {
                     LazyColumn(
-                        state = scrollState,
-                        modifier = Modifier.wrapContentHeight()
+                        Modifier.wrapContentHeight(),
+                        state = lazyColumnListState, verticalArrangement = Arrangement.Bottom
                     ) {
-                        itemsIndexed(listConverChat.value) { index, it ->
+                        this.itemsIndexed(listChatCurrent.value) { index, it ->
                             if (it.chatType == ChatType.FIRST_MESSAGE) {
                                 if (index != 0) {
                                     Space(h = 12)
-                                    Row(Modifier.fillMaxWidth()) {
+                                    Row(
+                                        Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
                                         TextView(
                                             text = it.time,
                                             modifier = Modifier,
@@ -337,6 +205,7 @@ fun ChatScreen(nav: NavController, viewModel: AppViewModel) {
                                             ClientScreen.DetailTourScreen.route,
                                             ClientScreen.ChatScreen.route
                                         )
+                                        lastIdTour.value = it.tourID
                                     }
                                 }
                                 Space(h = 6)
@@ -347,14 +216,16 @@ fun ChatScreen(nav: NavController, viewModel: AppViewModel) {
 
                             Space(h = 6)
                         }
+
+
                     }
                 }
+
 
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .background(red)
+                        .padding(horizontal = 12.dp)
                         .height(70.dp), verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(
@@ -370,6 +241,7 @@ fun ChatScreen(nav: NavController, viewModel: AppViewModel) {
                             contentChat.value = it
                         }
                     }
+                    Spacer(modifier = Modifier.width(6.dp))
                     Box(
                         modifier = Modifier
                             .background(boxColor(), CircleShape)
@@ -381,13 +253,22 @@ fun ChatScreen(nav: NavController, viewModel: AppViewModel) {
                             tint = appColor,
                             modifier = Modifier.rotate(-25f)
                         )
+                        Box(modifier = Modifier
+                            .matchParentSize()
+                            .onClick {
+                                viewModel.sendMessage(contentChat.value, lastIdTour.value) {
+                                    coroutineScope.launch {
+                                        if (listChatCurrent.value.isNotEmpty()) {
+                                            lazyColumnListState.animateScrollToItem(
+                                                listChatCurrent.value.lastIndex
+                                            )
+                                        }
+                                    }
+                                }
+                            })
                     }
                 }
             }
-
-
-        })
-
     }
 
 
@@ -480,7 +361,7 @@ fun ItemMessageChat(it: Chat) {
                 ), contentAlignment = Alignment.CenterEnd
             ) {
                 TextView(
-                    text = it.content,
+                    text = it.content.trim(),
                     modifier = Modifier
                         .padding(
                             start = 12.dp, top = 8.dp, bottom = 8.dp, end = 8.dp
@@ -561,22 +442,4 @@ fun ItemMessageChat(it: Chat) {
             }
         }
     }
-}
-
-@Composable
-private fun LazyListState.isAtBottom(): Boolean {
-
-    return remember(this) {
-        derivedStateOf {
-            val visibleItemsInfo = layoutInfo.visibleItemsInfo
-            if (layoutInfo.totalItemsCount == 0) {
-                false
-            } else {
-                val lastVisibleItem = visibleItemsInfo.last()
-                val viewportHeight = layoutInfo.viewportEndOffset + layoutInfo.viewportStartOffset
-
-                (lastVisibleItem.index + 1 == layoutInfo.totalItemsCount && lastVisibleItem.offset + lastVisibleItem.size <= viewportHeight)
-            }
-        }
-    }.value
 }

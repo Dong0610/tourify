@@ -21,6 +21,7 @@ import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.rounded.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,6 +37,9 @@ import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.app.authSignIn
 import dong.datn.tourify.app.currentTheme
+import dong.datn.tourify.app.database
+import dong.datn.tourify.app.firstStartApp
+import dong.datn.tourify.app.lastChatTour
 import dong.datn.tourify.screen.start.AccountActivity
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.black
@@ -52,11 +56,12 @@ import dong.datn.tourify.widget.VerScrollView
 import dong.datn.tourify.widget.ViewParent
 import dong.datn.tourify.widget.navigationTo
 import dong.datn.tourify.widget.onClick
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileScreen(navController: NavHostController, viewModels: AppViewModel) {
     val context = LocalContext.current
-    viewModels.isKeyboardVisible.value = false
+    val coroutineScope = rememberCoroutineScope()
     ViewParent(onBack = {
         viewModels.currentIndex.value = 3
         navController.navigate(ClientScreen.NotificationScreen.route) {
@@ -86,8 +91,15 @@ fun ProfileScreen(navController: NavHostController, viewModels: AppViewModel) {
                 IconView(modifier = Modifier, icon = R.drawable.ic_round_logout, icSize = 24) {
                     context.findActivity()
                         ?.startActivity(Intent(context, AccountActivity::class.java))
+                    coroutineScope.launch {
+                        database.loveDao().deleteAllItems()
+                        firstStartApp=false
+                        lastChatTour=null
+                    }
+
                     authSignIn = null
                     context.findActivity()?.finishAffinity()
+
                 }
             }
 

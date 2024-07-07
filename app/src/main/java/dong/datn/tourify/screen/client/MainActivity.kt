@@ -1,6 +1,7 @@
 package dong.datn.tourify.screen.client
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -15,9 +16,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -27,25 +35,39 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.rememberPagerState
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import dong.datn.tourify.app.appViewModels
+import dong.datn.tourify.R
 import dong.datn.tourify.app.currentTheme
-import dong.datn.tourify.screen.staff.ConversionScreen
+import dong.datn.tourify.app.isShowTrailer
+import dong.datn.tourify.app.viewModels
 import dong.datn.tourify.ui.theme.TourifyTheme
 import dong.datn.tourify.ui.theme.black
 import dong.datn.tourify.ui.theme.navigationBar
 import dong.datn.tourify.ui.theme.white
 import dong.datn.tourify.utils.changeTheme
+import dong.datn.tourify.utils.heightPercent
+import dong.datn.tourify.utils.widthPercent
 import dong.datn.tourify.widget.BottomNavigationBar
+import dong.datn.tourify.widget.RoundedImage
+import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.animComposable
+import dong.datn.tourify.widget.onClick
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
-import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEventListener
 import java.io.IOException
 import java.util.Locale
 
@@ -61,14 +83,12 @@ sealed class ClientScreen(var route: String) {
     data object DetailTourScreen : ClientScreen("detail_tour_client")
     data object DetailPlaceScreen : ClientScreen("detail_place_client")
     data object BookingNowScreen : ClientScreen("booking_now_client")
-   // data object ConversionScreen : ClientScreen("conversion_screen")
     data object ChatScreen : ClientScreen("chat_screen")
     data object UpdatePasswordScreen : ClientScreen("update_password_screen")
 }
 
 
 open class MainActivity : ComponentActivity() {
-    val viewModels = appViewModels!!
     private fun getCountry(context: Context): String? {
         if (ContextCompat.checkSelfPermission(
                 context,
@@ -77,6 +97,7 @@ open class MainActivity : ComponentActivity() {
         ) {
             return null
         }
+
 
         val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         val geocoder = Geocoder(context, Locale.getDefault())
@@ -98,6 +119,7 @@ open class MainActivity : ComponentActivity() {
         return null
     }
 
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
@@ -106,79 +128,152 @@ open class MainActivity : ComponentActivity() {
                 Color.TRANSPARENT
             )
         )
+
         changeTheme(currentTheme,applicationContext)
         setContent {
+            LaunchedEffect(key1 = " listNotifications.value.size") {
+                viewModels.listenerNotification()
+            }
 
-            KeyboardVisibilityEvent.setEventListener(
-                this,
-                object : KeyboardVisibilityEventListener {
-                    override fun onVisibilityChanged(isOpen: Boolean) {
-                        viewModels.isKeyboardVisible.value = isOpen
+            val coroutineScope = rememberCoroutineScope()
+            val country = remember { mutableStateOf<String?>(null) }
+            val permissionGranted = remember { mutableStateOf(false) }
+
+            val locationPermissionRequest = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestPermission()
+            ) { isGranted: Boolean ->
+                permissionGranted.value = isGranted
+                if (isGranted) {
+                    coroutineScope.launch {
+                        country.value = getCountry(applicationContext)
                     }
-                })
-
+                } else {
+                    country.value = "Location permission denied"
+                }
+            }
+            if (permissionGranted.value) {
+                LaunchedEffect(Unit) {
+                    country.value = getCountry(applicationContext)
+                }
+            } else {
+                LaunchedEffect(Unit) {
+                    locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                }
+            }
             TourifyTheme {
-                val navController = rememberNavController()
+                MainNavigation(country)
 
-                Scaffold(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(color = navigationBar(applicationContext)),
+            }
+            if (isShowTrailer) {
+                TrailerImageDialog()
+            }
 
-                    bottomBar = {
-                        if (!viewModels.isKeyboardVisible.value) {
-                            BottomAppBar (containerColor = navigationBar(applicationContext)) {
-                                BottomNavigationBar(
-                                    navController = navController,
-                                    viewModels
-                                )
-                            }
-                        }
+        }
 
-                    },
-                ) { innerPadding ->
-                    val coroutineScope = rememberCoroutineScope()
-                    val country = remember { mutableStateOf<String?>(null) }
-                    val permissionGranted = remember { mutableStateOf(false) }
+    }
 
-                    val locationPermissionRequest = rememberLauncherForActivityResult(
-                        contract = ActivityResultContracts.RequestPermission()
-                    ) { isGranted: Boolean ->
-                        permissionGranted.value = isGranted
-                        if (isGranted) {
-                            coroutineScope.launch {
-                                country.value = getCountry(applicationContext)
-                            }
-                        } else {
-                            country.value = "Location permission denied"
-                        }
+    @OptIn(ExperimentalPagerApi::class)
+    @Composable
+    fun TrailerImageDialog() {
+        val showDialog = remember { mutableStateOf(true) }
+
+        if (showDialog.value) {
+            Dialog(onDismissRequest = { showDialog.value = false }) {
+
+                TrailerImageContent(
+                    onDismiss = {
+                        showDialog.value = false
+                        isShowTrailer = false
                     }
-                    if (permissionGranted.value) {
-                        LaunchedEffect(Unit) {
-                            country.value = getCountry(applicationContext)
-                        }
-                    } else {
-                        LaunchedEffect(Unit) {
-                            locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                        }
-                    }
-                    MainNavigation(navController, innerPadding, country)
+                )
+
+            }
+        }
+    }
+
+    @OptIn(ExperimentalPagerApi::class)
+    @Composable
+    private fun TrailerImageContent(onDismiss: () -> Unit) {
+        val coroutineScope = rememberCoroutineScope()
+        val listImage =
+            listOf(
+                R.drawable.trailer_img_1,
+                R.drawable.trailer_img_2,
+                R.drawable.trailer_img_3,
+                R.drawable.trailer_img_4,
+                R.drawable.trailer_img_5
+            )
+        val pagerState = rememberPagerState(
+            pageCount = listImage.size,
+            initialOffscreenLimit = 2,
+            infiniteLoop = true,
+            initialPage = 0,
+        )
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(3000)
+                coroutineScope.launch {
+                    val nextPage = (pagerState.currentPage + 1) % listImage.size
+                    pagerState.animateScrollToPage(nextPage)
                 }
             }
         }
 
+        val indexSlideImage = remember {
+            mutableStateOf(1)
+        }
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            HorizontalPager(modifier = Modifier, state = pagerState) { page ->
+                RoundedImage(
+                    listImage.get(page),
+                    contentScale = ContentScale.FillBounds,
+                    modifier = Modifier.heightPercent(80f),
+                    shape = RoundedCornerShape(6.dp)
+                )
+                indexSlideImage.value = page
+            }
+        }
+
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .wrapContentHeight(), horizontalArrangement = Arrangement.End
+        ) {
+            Box(
+                Modifier
+                    .widthPercent(40f)
+                    .height(40.dp)
+                    .background(white, shape = RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                TextView(
+                    text = getString(R.string.continues),
+                    Modifier,
+                    color = black,
+                    font = Font(R.font.poppins_semibold)
+                )
+                Box(modifier = Modifier
+                    .matchParentSize()
+                    .onClick { onDismiss.invoke() })
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
 
     }
 
-    open fun onBack() {}
-
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @Composable
     fun MainNavigation(
-        navController: NavHostController,
-        innerPadding: PaddingValues,
         country: MutableState<String?>
     ) {
-
         val systemUiController = rememberSystemUiController()
         val statusBar = if (currentTheme == 1) white else black
         SideEffect {
@@ -186,53 +281,146 @@ open class MainActivity : ComponentActivity() {
                 color = statusBar,
             )
         }
-        NavHost(
-            modifier = Modifier.padding(paddingValues = innerPadding),
-            navController = navController,
-            startDestination = ClientScreen.HomeClientScreen.route
-        ) {
-            animComposable("home_client") {
-                HomeClientScreen(nav = navController, viewModel = viewModels, country.value)
-            }
-            animComposable("discovery_client") {
-                DiscoverScreen(navController, viewModels)
-            }
-            animComposable(ClientScreen.WishlistScreen.route) {
-                WishListScreen(navController, viewModels)
-            }
-            animComposable(ClientScreen.NotificationScreen.route) {
-                NotificationScreen(navController, viewModels)
-            }
-            animComposable(ClientScreen.ProfileScreen.route) {
-                ProfileScreen(navController, viewModels)
-            }
-            animComposable(ClientScreen.UpdateProfileScreen.route) {
-                UpdateProfileScreen(navController, viewModels)
-            }
-            animComposable(ClientScreen.SettingScreen.route) {
-                SettingScreen(navController, viewModels)
-            }
-            animComposable(ClientScreen.BookingScreen.route) {
-                BookingScreen(navController, viewModels)
-            }
-            animComposable(ClientScreen.DetailTourScreen.route) {
-                DetailTourScreen(navController, viewModels, ClientScreen.HomeClientScreen.route)
-            }
-            animComposable(ClientScreen.DetailPlaceScreen.route) {
-                DetailPlaceScreen(navController, viewModels, ClientScreen.HomeClientScreen.route)
-            }
-            animComposable(ClientScreen.BookingNowScreen.route) {
-                BookingNowScreen(navController, viewModels)
-            }
+        val bottomBarState = rememberSaveable { (mutableStateOf(false)) }
+        val navController = rememberNavController()
+        val keyboardController = LocalSoftwareKeyboardController.current
 
-            animComposable(ClientScreen.ChatScreen.route) {
-                ChatScreen(navController, viewModels)
-            }
-            animComposable(ClientScreen.UpdatePasswordScreen.route){
-                UpdatePassScreen(navController, viewModels)
-            }
+        Scaffold(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = navigationBar(applicationContext)),
+            bottomBar = {
+                if (bottomBarState.value) {
+                    BottomAppBar(containerColor = navigationBar(applicationContext)) {
+                        BottomNavigationBar(
+                            navController = navController,
+                            viewModels, bottomBarState
+                        )
+                    }
+                }
 
-        }
+            }, content = { insertPadding ->
+                NavHost(
+                    modifier = Modifier.padding(insertPadding),
+                    navController = navController,
+                    startDestination = ClientScreen.HomeClientScreen.route
+                ) {
+                    animComposable("home_client") {
+                        LaunchedEffect(Unit) {
+                            bottomBarState.value = true
+                            keyboardController?.hide()
+                            viewModels.currentIndex.value=0;
+                        }
+                        HomeClientScreen(nav = navController, viewModel = viewModels, country.value)
+                    }
+                    animComposable("discovery_client") {
+                        LaunchedEffect(Unit) {
+                            bottomBarState.value = true
+                            keyboardController?.hide()
+                            viewModels.currentIndex.value=1
+                        }
+                        DiscoverScreen(navController, viewModels)
+                    }
+                    animComposable(ClientScreen.WishlistScreen.route) {
+                        LaunchedEffect(Unit) {
+                            bottomBarState.value = false
+                            keyboardController?.hide()
+                        }
+                        WishListScreen(navController, viewModels)
+                    }
+                    animComposable(ClientScreen.NotificationScreen.route) {
+                        LaunchedEffect(Unit) {
+                            keyboardController?.hide()
+                            bottomBarState.value = true
+                            viewModels.currentIndex.value=3
+                        }
+                        NotificationScreen(navController, viewModels)
+                    }
+                    animComposable(ClientScreen.ProfileScreen.route) {
+                        LaunchedEffect(Unit) {
+                            keyboardController?.hide()
+                            bottomBarState.value = true
+                            viewModels.currentIndex.value=4
+                        }
+                        ProfileScreen(navController, viewModels)
+                    }
+                    animComposable(ClientScreen.UpdateProfileScreen.route) {
+
+                        LaunchedEffect(Unit) {
+                            keyboardController?.hide()
+                            bottomBarState.value = false
+                        }
+                        UpdateProfileScreen(navController, viewModels)
+                    }
+                    animComposable(ClientScreen.SettingScreen.route) {
+
+                        LaunchedEffect(Unit) {
+                            keyboardController?.hide()
+                            bottomBarState.value = false
+                        }
+                        SettingScreen(navController, viewModels)
+                    }
+                    animComposable(ClientScreen.BookingScreen.route) {
+
+                        LaunchedEffect(Unit) {
+                            keyboardController?.hide()
+                            bottomBarState.value = false
+                        }
+                        BookingScreen(navController, viewModels)
+                    }
+                    animComposable(ClientScreen.DetailTourScreen.route) { LaunchedEffect(Unit) {
+                        keyboardController?.hide()
+                        bottomBarState.value = false
+                    }
+                        DetailTourScreen(
+                            navController,
+                            viewModels,
+                            ClientScreen.HomeClientScreen.route
+                        )
+
+                    }
+                    animComposable(ClientScreen.DetailPlaceScreen.route) {
+
+                        LaunchedEffect(Unit) {
+                            keyboardController?.hide()
+                            bottomBarState.value = false
+                        }
+                        DetailPlaceScreen(
+                                navController,
+                        viewModels,
+                        ClientScreen.HomeClientScreen.route
+                        )
+
+                    }
+                    animComposable(ClientScreen.BookingNowScreen.route) {
+
+                        LaunchedEffect(Unit) {
+                            bottomBarState.value = false
+                        }
+                        BookingNowScreen(navController, viewModels)
+                    }
+
+                    animComposable(ClientScreen.ChatScreen.route) {
+                        LaunchedEffect(Unit) {
+                            keyboardController?.hide()
+
+                            viewModels.currentIndex.value=2
+                            bottomBarState.value = false
+                        }
+                        ChatScreen(navController, viewModels)
+                    }
+                    animComposable(ClientScreen.UpdatePasswordScreen.route) {
+
+                        LaunchedEffect(Unit) {
+                            keyboardController?.hide()
+                            bottomBarState.value = false
+                        }
+                        UpdatePassScreen(navController, viewModels)
+                    }
+                }
+
+
+            })
 
     }
 }

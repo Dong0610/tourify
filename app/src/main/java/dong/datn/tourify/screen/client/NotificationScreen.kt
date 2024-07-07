@@ -18,8 +18,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material3.Card
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -39,32 +37,39 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
+import dong.datn.tourify.app.authSignIn
 import dong.datn.tourify.app.currentTheme
+import dong.datn.tourify.app.viewModels
 import dong.datn.tourify.model.Notification
-import dong.datn.tourify.model.getListNotification
 import dong.datn.tourify.ui.theme.appColor
-import dong.datn.tourify.ui.theme.azure
+import dong.datn.tourify.ui.theme.colorByTheme
 import dong.datn.tourify.ui.theme.darkGray
 import dong.datn.tourify.ui.theme.ghostWhite
+import dong.datn.tourify.ui.theme.iconBackground
 import dong.datn.tourify.ui.theme.lightGrey
 import dong.datn.tourify.ui.theme.textColor
-import dong.datn.tourify.widget.IconView
+import dong.datn.tourify.ui.theme.transparent
+import dong.datn.tourify.utils.NOTIFICATION
+import dong.datn.tourify.widget.RoundedImage
 import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.ViewParent
 import dong.datn.tourify.widget.onClick
-import dong.duan.ecommerce.library.showToast
 import dong.duan.livechat.widget.SearchBox
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun NotificationScreen(navController: NavHostController, viewModels: AppViewModel) {
     val context = LocalContext.current
-    val listNotifications = getListNotification()
+    val listCurrent = viewModels.listNotifications
+    val listSearch = remember {
+        mutableStateOf(viewModels.listNotifications.value)
+    }
     ViewParent(onBack = {
         viewModels.currentIndex.value = 2
-        navController.navigate(ClientScreen.WishlistScreen.route) {
+        navController.navigate(ClientScreen.DiscoveryScreen.route) {
             popUpTo(0)
         }
-
     }) {
         Column {
             Row(
@@ -73,22 +78,10 @@ fun NotificationScreen(navController: NavHostController, viewModels: AppViewMode
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconView(modifier = Modifier, icon = Icons.Rounded.KeyboardArrowLeft) {
-                    viewModels.currentIndex.value = 2
-                    navController.navigate(ClientScreen.WishlistScreen.route) {
-                        popUpTo(0)
-                    }
-                }
                 TextView(
                     context.getString(R.string.notification), Modifier.weight(1f), textSize = 20,
                     appColor, font = Font(R.font.poppins_semibold), textAlign = TextAlign.Center
                 )
-                IconView(modifier = Modifier, icon = Icons.Rounded.KeyboardArrowLeft) {
-                    viewModels.currentIndex.value = 2
-                    navController.navigate(ClientScreen.WishlistScreen.route) {
-                        popUpTo(0)
-                    }
-                }
             }
 
             Spacer(
@@ -106,9 +99,22 @@ fun NotificationScreen(navController: NavHostController, viewModels: AppViewMode
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
             ) {
-                SearchBox {
-                    showToast(it)
-                }
+                SearchBox({
+                    if (it.trim().isEmpty()) {
+                        listSearch.value = listCurrent.value
+                    }
+                }, {
+                    listSearch.value = if (it.isEmpty()) {
+                        listCurrent.value
+                    } else {
+                        listCurrent.value.filter { item ->
+                            item.title.contains(
+                                it,
+                                ignoreCase = true
+                            ) || item.content.contains(it, ignoreCase = true)
+                        }.toMutableList()
+                    }
+                })
             }
             Spacer(modifier = Modifier.height(6.dp))
             LazyColumn(
@@ -120,8 +126,8 @@ fun NotificationScreen(navController: NavHostController, viewModels: AppViewMode
                 ),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 content = {
-                    items(listNotifications, key = { it ->
-                        (it as Notification).notiId
+                    items(listSearch.value, key = { it ->
+                        it.notiId
                     }) {
                         ItemNotification(it) {
 
@@ -176,17 +182,11 @@ fun ItemNotification(notification: Notification, callback: (Notification) -> Uni
     Box(
         modifier = Modifier
             .fillMaxWidth(1f)
-
             .background(
-                color = if (isReadNoti.value) ghostWhite else azure,
+                color = if (isReadNoti.value) transparent else colorByTheme(ghostWhite,
+                    iconBackground),
                 shape = RoundedCornerShape(8.dp)
             )
-            .onClick {
-                if (isReadNoti.value == false) {
-                    isReadNoti.value = true
-                }
-                callback.invoke(notification)
-            }
     ) {
         Row(
             Modifier
@@ -194,17 +194,25 @@ fun ItemNotification(notification: Notification, callback: (Notification) -> Uni
                 .padding(horizontal = 12.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            NotificationIcon(
-                data = R.drawable.ic_notifications_active,
-                Modifier
-                    .padding(vertical = 6.dp)
-                    .size(46.dp),
-            )
+            if (notification.image == "") {
+                NotificationIcon(
+                    data = R.drawable.ic_notifications_active,
+                    Modifier
+                        .padding(vertical = 6.dp)
+                        .size(46.dp),
+                )
+            } else {
+                RoundedImage(
+                    data = notification.image,
+                    modifier = Modifier.size(46.dp),
+                    shape = CircleShape
+                )
+            }
             Spacer(modifier = Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 TextView(
                     text = notification.title,
-                    color = textColor(context),
+                    color = textColor(),
                     modifier = Modifier.fillMaxWidth(),
                     font = Font(R.font.poppins_medium)
                 )
@@ -218,7 +226,7 @@ fun ItemNotification(notification: Notification, callback: (Notification) -> Uni
                 )
                 Spacer(modifier = Modifier.height(1.dp))
                 TextView(
-                    text = notification.content,
+                    text = notification.time,
                     color = if (currentTheme == 1) darkGray else lightGrey,
                     modifier = Modifier.fillMaxWidth(),
                     font = Font(R.font.poppin_light),
@@ -226,5 +234,26 @@ fun ItemNotification(notification: Notification, callback: (Notification) -> Uni
                 )
             }
         }
+        Box(modifier = Modifier
+            .matchParentSize()
+            .onClick {
+                if (isReadNoti.value == false) {
+                    isReadNoti.value = true
+                    GlobalScope.launch {
+                        viewModels.realtime
+                            .getReference("$NOTIFICATION")
+                            .child(authSignIn!!.UId)
+                            .child(notification.notiId)
+                            .updateChildren(hashMapOf<String?, Any?>().apply {
+                                put("read", true)
+                            })
+                            .addOnSuccessListener {
+                                viewModels.countUnReadNoti.value -= 1
+                            }
+                    }
+                }
+
+                callback.invoke(notification)
+            })
     }
 }

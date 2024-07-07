@@ -1,5 +1,6 @@
 package dong.datn.tourify.screen.client
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -16,14 +17,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,22 +45,44 @@ import androidx.navigation.NavHostController
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.app.currentTheme
+import dong.datn.tourify.app.database
+import dong.datn.tourify.app.viewModels
+import dong.datn.tourify.database.LoveItem
+import dong.datn.tourify.firebase.Firestore
 import dong.datn.tourify.ui.theme.appColor
+import dong.datn.tourify.ui.theme.black
 import dong.datn.tourify.ui.theme.darkGray
 import dong.datn.tourify.ui.theme.lightGrey
+import dong.datn.tourify.ui.theme.red
 import dong.datn.tourify.ui.theme.white
+import dong.datn.tourify.utils.TOUR
 import dong.datn.tourify.utils.heightPercent
 import dong.datn.tourify.widget.IconView
 import dong.datn.tourify.widget.InnerImageIcon
 import dong.datn.tourify.widget.RoundedImage
 import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.ViewParent
+import dong.datn.tourify.widget.navigationTo
+import dong.datn.tourify.widget.onClick
 import dong.duan.ecommerce.library.showToast
 import dong.duan.livechat.widget.SearchBox
+import dong.duan.travelapp.model.Tour
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun WishListScreen(navController: NavHostController, viewModels: AppViewModel) {
     val context = LocalContext.current
+    val listLove = produceState(initialValue = emptyList<LoveItem>(), database) {
+        value = withContext(Dispatchers.IO) {
+            database.loveDao().getAllItems()
+        }
+    }.value
+
+
+
+
     ViewParent(onBack = {
         viewModels.currentIndex.value = 1
         navController.navigate(ClientScreen.ProfileScreen.route) {
@@ -97,9 +125,9 @@ fun WishListScreen(navController: NavHostController, viewModels: AppViewModel) {
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
             ) {
-                SearchBox {
+                SearchBox({}, {
                     showToast(it)
-                }
+                })
             }
             Spacer(modifier = Modifier.height(6.dp))
             LazyVerticalGrid(
@@ -113,8 +141,11 @@ fun WishListScreen(navController: NavHostController, viewModels: AppViewModel) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 content = {
-                    items(list.size) { index ->
-                        ItemWishList()
+                    this.items(listLove) {
+                        ItemWishList(it){
+                            viewModels.detailTour.value = it
+                            navController.navigationTo(ClientScreen.DetailTourScreen.route,ClientScreen.DiscoveryScreen.route)
+                        }
                     }
                 }
             )
@@ -124,76 +155,107 @@ fun WishListScreen(navController: NavHostController, viewModels: AppViewModel) {
     }
 }
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun ItemWishList() {
-    Box(
-        Modifier
-            .border(width = 1.dp, color = lightGrey, shape = RoundedCornerShape(12.dp))
-            .background(white)
-            .heightPercent(30f)
-            .clip(RoundedCornerShape(4.dp))
-            .shadow(
-                spotColor = Color(0xD5ECE9E9),
-                ambientColor = Color(0xD5ECE9E9),
-                elevation = 2.dp,
-                shape = RoundedCornerShape(2.dp)
-            )
-
-    ) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(6.dp)
-        ) {
-            Row(Modifier.heightPercent(16f)) {
-                RoundedImage(
-                    R.drawable.img_test_data_1,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize(),
-
-                )
-            }
-            Spacer(modifier = Modifier.height(6.dp))
-            TextView(text = "Travel name", modifier = Modifier, font = Font(R.font.poppins_medium))
-            Spacer(modifier = Modifier.weight(1f))
-            Row(Modifier.fillMaxWidth()) {
-                TextView(
-                    text = "100",
-                    modifier = Modifier,
-                    font = Font(R.font.poppins_medium),
-                    color = Color.Red
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                TextView(text = "100", modifier = Modifier, font = Font(R.font.poppins_medium))
-            }
-            Spacer(modifier = Modifier.height(2.dp))
-
-            Row(Modifier.fillMaxWidth(1f)) {
-                Icon(
-                    imageVector = Icons.Rounded.LocationOn,
-                    modifier = Modifier.size(20.dp),
-                    contentDescription = "Location",
-                    tint = if (currentTheme == 1) darkGray else white
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                TextView(
-                    text = "100",
-                    modifier = Modifier,
-                    font = Font(R.font.poppins_medium),
-                    color = lightGrey
-                )
-            }
-
-        }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            InnerImageIcon(
-                modifier = Modifier.size(32.dp),
-                icon = Icons.Rounded.Favorite,
-                icSize = 20
-            )
-        }
-        Spacer(modifier = Modifier.width(12.dp))
+fun ItemWishList(loveItem:LoveItem, onSelect: (Tour) -> Unit) {
+    val tour = remember {
+        mutableStateOf<Tour?>(null)
     }
+    val coroutineScope = rememberCoroutineScope()
+    val loveState = remember {
+        mutableStateOf(true)
+    }
+
+    if(loveState.value){
+        LaunchedEffect(key1 = "wish") {
+            Firestore.fetchById<Tour>("$TOUR/${loveItem.tourId}"){
+                tour.value = it
+            }
+        }
+        if(tour.value!=null){
+            coroutineScope.launch {
+                loveState.value= database.loveDao().doesItemExist(tour.value!!.tourID)
+            }
+            Box(
+                Modifier
+                    .border(width = 1.dp, color = lightGrey, shape = RoundedCornerShape(12.dp))
+                    .background(white)
+                    .heightPercent(30f)
+                    .clip(RoundedCornerShape(4.dp))
+                    .shadow(
+                        spotColor = Color(0xD5ECE9E9),
+                        ambientColor = Color(0xD5ECE9E9),
+                        elevation = 2.dp,
+                        shape = RoundedCornerShape(2.dp)
+                    )
+
+            ) {
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(6.dp)
+                ) {
+                    Row(Modifier.heightPercent(16f)) {
+                        RoundedImage(
+                            R.drawable.img_test_data_1,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize(),
+
+                            )
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    TextView(text = "Travel name", modifier = Modifier, font = Font(R.font.poppins_medium))
+                    Spacer(modifier = Modifier.weight(1f))
+                    Row(Modifier.fillMaxWidth()) {
+                        TextView(
+                            text = "100",
+                            modifier = Modifier,
+                            font = Font(R.font.poppins_medium),
+                            color = Color.Red
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        TextView(text = "100", modifier = Modifier, font = Font(R.font.poppins_medium))
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Row(Modifier.fillMaxWidth(1f)) {
+                        Icon(
+                            imageVector = Icons.Rounded.LocationOn,
+                            modifier = Modifier.size(20.dp),
+                            contentDescription = "Location",
+                            tint = if (currentTheme == 1) darkGray else white
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        TextView(
+                            text = "100",
+                            modifier = Modifier,
+                            font = Font(R.font.poppins_medium),
+                            color = lightGrey
+                        )
+                    }
+
+                }
+                Box(Modifier.matchParentSize().onClick {
+                    onSelect.invoke(tour.value!!)
+                })
+                InnerImageIcon(
+                    modifier = Modifier
+                        .size(32.dp),
+                    icon = Icons.Rounded.Favorite,
+                    icSize = 20,
+                    tint = if (loveState.value) red else black
+                ){
+                    viewModels.onModifyLove(tour.value!!) {
+                        loveState.value = it
+                    }
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+            }
+        }
+    }
+
+
+
 
 }

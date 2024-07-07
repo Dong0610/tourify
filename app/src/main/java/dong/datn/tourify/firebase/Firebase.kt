@@ -187,23 +187,24 @@ object RealTime {
 
     class Push<T>(
         private var paths: String,
-        private var idProvider: ((String) -> Unit)? = null,
         private var data: T? = null,
         private var finishCallback: (() -> Unit)? = null,
         private var errorCallback: ((String) -> Unit)? = null
     ) {
         private var isSetPath = false
+        private var newId: String? = null
 
         fun newId(): Push<T> {
             val newId = FirebaseDatabase.getInstance().reference.push().key
             paths += "/$newId"
+            this.newId= newId
             return this
         }
 
         fun withId(idProvider: (String) -> Unit): Push<T> {
             isSetPath = true
 
-            this.idProvider = idProvider
+            idProvider.invoke(this.newId!!)
             return this
         }
 
@@ -254,7 +255,7 @@ object RealTime {
                     }
                     .addOnFailureListener { exception ->
                         errorCallback?.invoke(exception.message ?: "Unknown error")
-                    }.await()
+                    }
             }
         }
     }
@@ -309,7 +310,7 @@ object RealTime {
                     onFinish()
                 }.addOnFailureListener { exception ->
                     onError(exception.message ?: "Unknown error")
-                }.await()
+                }
         }
     }
 

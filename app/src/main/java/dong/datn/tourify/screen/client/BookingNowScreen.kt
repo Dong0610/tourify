@@ -46,7 +46,6 @@ import com.guru.fontawesomecomposelib.FaIcon
 import com.guru.fontawesomecomposelib.FaIcons
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
-import dong.datn.tourify.app.appViewModels
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.firebase.RealTime
 import dong.datn.tourify.ui.theme.appColor
@@ -78,10 +77,10 @@ import dong.duan.travelapp.model.Tour
 @Composable
 fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
     val context = LocalContext.current
-    viewModels.isKeyboardVisible.value = true
+    
 
     val tour = remember {
-        mutableStateOf(appViewModels?.bookingTourNow?.value)
+        mutableStateOf(viewModels?.bookingTourNow?.value)
     }
     val notes = remember {
         mutableStateOf<String>("")

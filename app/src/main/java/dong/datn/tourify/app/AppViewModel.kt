@@ -4,14 +4,17 @@ import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavController
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.firestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -19,16 +22,21 @@ import com.google.firebase.messaging.messaging
 import com.google.firebase.storage.ktx.storage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dong.datn.tourify.R
+import dong.datn.tourify.database.LoveItem
+import dong.datn.tourify.database.LoveItemRemote
 import dong.datn.tourify.firebase.Firestore
 import dong.datn.tourify.firebase.RealTime
 import dong.datn.tourify.model.Chat
 import dong.datn.tourify.model.ChatType
 import dong.datn.tourify.model.ConversionChat
+import dong.datn.tourify.model.Notification
 import dong.datn.tourify.model.OtpCode
 import dong.datn.tourify.model.Places
 import dong.datn.tourify.screen.client.ClientScreen
 import dong.datn.tourify.utils.CHAT
 import dong.datn.tourify.utils.CONVERSION
+import dong.datn.tourify.utils.LOVE
+import dong.datn.tourify.utils.NOTIFICATION
 import dong.datn.tourify.utils.SCHEDULE
 import dong.datn.tourify.utils.SERVICE
 import dong.datn.tourify.utils.TOUR
@@ -36,10 +44,12 @@ import dong.datn.tourify.utils.USERS
 import dong.datn.tourify.utils.timeNow
 import dong.datn.tourify.widget.navigationTo
 import dong.duan.ecommerce.library.showToast
+import dong.duan.livechat.utility.toJson
 import dong.duan.travelapp.model.Schedule
 import dong.duan.travelapp.model.Service
 import dong.duan.travelapp.model.Tour
 import dong.duan.travelapp.model.Users
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -53,7 +63,9 @@ import javax.inject.Inject
 @HiltViewModel
 class AppViewModel @Inject constructor() : ViewModel() {
 
-
+    val countUnReadNoti = mutableStateOf(0)
+    val listNotifications = mutableStateOf(mutableListOf<Notification>())
+    val listConversations = mutableStateOf<MutableList<ConversionChat>>(mutableListOf())
     val currentEmailVerify= mutableStateOf("")
     val prevScreen= mutableStateOf("")
     val detailPlace = mutableStateOf<Places?>(null)
@@ -67,7 +79,6 @@ class AppViewModel @Inject constructor() : ViewModel() {
         currentChat.value = null
     }
     var currentIndex = mutableStateOf(0)
-    var isKeyboardVisible = mutableStateOf(false)
     var otpCodeResponse =
         mutableStateOf<OtpCode?>(null)
 
@@ -82,23 +93,20 @@ class AppViewModel @Inject constructor() : ViewModel() {
     fun fogetPassword(text: String) {
 
     }
-
-    var listConverChat: MutableState<List<Chat>> = mutableStateOf(emptyList())
-
-
+    var listChatCurrent: MutableState<MutableList<Chat>> = mutableStateOf(mutableListOf())
     private var childEventListenerCurrentChat: ChildEventListener? = null
     val lastTourIdByChat = mutableStateOf("")
     fun startListeningForNewChats() {
 
         val converId = authSignIn!!.ConversionChatId
-        listConverChat.value = emptyList()
+        listChatCurrent.value = mutableListOf()
         val chatReference = realtime.getReference("CHAT/$converId")
 
         childEventListenerCurrentChat = object : ChildEventListener {
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                 val chat = snapshot.getValue(Chat::class.java)
                 chat?.let {
-                    listConverChat.value = listConverChat.value + it
+                    listChatCurrent.value = (listChatCurrent.value + it).toMutableList()
                 }
                 if (chat!!.chatType == ChatType.FIRST_MESSAGE) {
                     lastTourIdByChat.value = chat.tourId
@@ -118,6 +126,81 @@ class AppViewModel @Inject constructor() : ViewModel() {
         }
 
         chatReference.addChildEventListener(childEventListenerCurrentChat as ChildEventListener)
+    }
+
+    fun startListeningForNewChatsByConverId(converId: String) {
+        listChatCurrent.value = mutableListOf()
+        val chatReference = realtime.getReference("CHAT/$converId")
+        childEventListenerCurrentChat = object : ChildEventListener {
+            override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                val chat = snapshot.getValue(Chat::class.java)
+                chat?.let {
+                    listChatCurrent.value = (listChatCurrent.value + it).toMutableList()
+                }
+                if (chat!!.chatType == ChatType.FIRST_MESSAGE) {
+                    lastTourIdByChat.value = chat.tourId
+                }
+            }
+
+            override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+            }
+
+            override fun onChildRemoved(snapshot: DataSnapshot) {
+            }
+
+            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
+
+            override fun onCancelled(error: DatabaseError) {
+            }
+        }
+
+        chatReference.addChildEventListener(childEventListenerCurrentChat as ChildEventListener)
+    }
+
+    fun listenerCurrentChat() {
+        val listChat = mutableListOf<ConversionChat>()
+        val firestore = FirebaseFirestore.getInstance()
+
+        firestore.collection(CONVERSION)
+            .addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, e ->
+                if (e == null && snapshot != null) {
+                    listChat.clear()
+                    listChat.addAll(snapshot.toObjects(ConversionChat::class.java))
+                    listChat.sortBy { it.lastMessageTime }
+                    listConversations.value = listChat
+                } else {
+                    e?.printStackTrace()
+                }
+            }
+    }
+
+    fun listenerNotification() {
+        val listNotification = mutableListOf<Notification>()
+        FirebaseDatabase.getInstance().getReference(NOTIFICATION)
+            .child(authSignIn!!.UId)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    listNotification.clear()
+                    var unreadCount = 0
+
+                    for (dataSnapshot in snapshot.children) {
+                        val notification = dataSnapshot.getValue(Notification::class.java)
+                        if (notification != null) {
+                            if (!notification.isRead) {
+                                unreadCount++
+                            }
+                            listNotification.add(notification)
+                        }
+                    }
+                    listNotification.reverse()
+                    countUnReadNoti.value = unreadCount
+                    listNotifications.value = listNotification
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("Notification", error.message)
+                }
+            })
     }
 
 
@@ -167,7 +250,6 @@ class AppViewModel @Inject constructor() : ViewModel() {
 
     fun getAllPlaces(callback: (MutableList<Places>?) -> Unit) {
         Firestore.getListData<Places>("PLACES") {
-
             Log.d("getAllPlaces",it.toString())
             callback(it)
         }
@@ -182,39 +264,137 @@ class AppViewModel @Inject constructor() : ViewModel() {
 
     fun signInWithEmailPassword(email: String, password: String, onSuccess: (Int) -> Unit) {
         val trimmedEmail = email.trim()
-        val trimmedPassword = "100129"
-        Firebase.firestore.collection("USERS")
-            .whereEqualTo("email", "123@gmail.com")
+        if (hasInternetConnection(appContext)) {
+            Firebase.firestore.collection("USERS")
+                .whereEqualTo("email", trimmedEmail)
+                .get()
+                .addOnSuccessListener {
+                    if (it.isEmpty) {
+                        onSuccess(-1)
+                        showToast(appContext.getString(R.string.invalid_email))
+                    } else {
+                        val user = it.documents.get(0).toObject(Users::class.java)
+                        var userFound = false
+                        if (user!!.Password == password) {
+                            userFound = true
+                            authSignIn = user
+                            showToast(appContext.getString(R.string.login_success))
+                            GlobalScope.launch(Dispatchers.Main) {
+                                updateNewToken(user.UId)
+                                pushNewNotification(
+                                    title = appContext.getString(R.string.sign_in_success),
+                                    image = successLogin,
+                                    senderId = user.UId,
+                                    content = appContext.getString(R.string.login_at) + getPhoneName() + appContext.getString(
+                                        R.string.at_time
+                                    ) + timeNow(),
+                                    reciveId = user.UId,
+                                    type = "LOGIN",
+                                    link = "",
+                                    router = "history_screen"
+
+                                )
+                                loadTourLove(user.UId)
+                                loadLastChatTour(user)
+                            }
+
+                            onSuccess.invoke(1)
+                        }
+                        if (!userFound) {
+                            showToast(appContext.getString(R.string.invalid_password))
+                            onSuccess.invoke(-1)
+                        }
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    Log.e("SignIn", "Error checking credentials: ${exception.message}", exception)
+                    showToast("Error checking credentials: ${exception.message}")
+                    onSuccess.invoke(-1)
+                }
+        } else {
+            showToast(appContext.getString(R.string.no_internet))
+        }
+    }
+
+    private fun loadLastChatTour(uId: Users) {
+        firestore.collection(CONVERSION)
+            .document(uId.ConversionChatId)
             .get()
             .addOnSuccessListener {
-                if (it.isEmpty) {
-                    onSuccess(-1)
-                } else {
-                    val user = it.documents.get(0).toObject(Users::class.java)
-                    var userFound = false
+                val conversionChat = it.toObject(ConversionChat::class.java)
+                if (conversionChat!= null) {
+                   Firestore.fetchById<Tour>("$TOUR/${conversionChat.lastChatTourId}"){
+                       lastChatTour= it
+                   }
+                }
+            }
+    }
 
-                    Log.d("SignIn", "Checking user: $user")
-                    if (user!!.Password == trimmedPassword) {
-                        userFound = true
-                        authSignIn = user
-                        showToast(appContext.getString(R.string.login_success))
-                        onSuccess.invoke(1)
-                        GlobalScope.launch(Dispatchers.Main) {
-                            updateNewToken(user.UId!!)
+    private fun loadTourLove(uId: String) {
+        realtime.getReference(LOVE)
+            .child(uId)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                if (snapshot.exists()) {
+                    snapshot.children.forEach { doc ->
+                        val loveItem = doc.getValue(LoveItemRemote::class.java)
+                        loveItem?.toJson()?.let { Log.d("LoveTag", it) }
+                        loveItem?.let {
+                            CoroutineScope(Dispatchers.IO).launch {
+                                database.loveDao().insertItem(
+                                    LoveItem(
+                                        tourId = it.tourId,
+                                        tourName = it.tourName
+                                    )
+                                )
+                            }
                         }
-
-                    }
-                    if (!userFound) {
-                        showToast(appContext.getString(R.string.invalid_password))
-                        onSuccess.invoke(-1)
                     }
                 }
             }
             .addOnFailureListener { exception ->
-                Log.e("SignIn", "Error checking credentials: ${exception.message}", exception)
-                showToast("Error checking credentials: ${exception.message}")
-                onSuccess.invoke(-1)
+                Log.e("LoveTag", "Error getting data", exception)
             }
+
+    }
+
+    val successLogin =
+        "https://static-00.iconduck.com/assets.00/alert-success-icon-1024x1024-aobtkid4.png";
+
+    fun pushNewNotification(
+        title: String,
+        image: String,
+        senderId: String,
+        reciveId: String,
+        content: String,
+        type: String = "COMMON",
+        link: String,
+        router: String
+    ) {
+        val notification = Notification(
+            notiId = "",
+            senderId = senderId,
+            title = title,
+            content = content,
+            time = timeNow(),
+            isRead = false,
+            type = type,
+            image = image,
+            link = link,
+            route = router,
+        )
+
+        RealTime.Push<Notification>("$NOTIFICATION/$reciveId")
+            .newId()
+            .withId {
+                notification.notiId = it
+            }
+            .set(notification)
+            .finish {
+                Log.d("PushNoti", "")
+            }.error {
+                showToast(it)
+            }.executeAsync()
 
     }
 
@@ -242,7 +422,28 @@ class AppViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-    fun onModifyLove(tour: Tour) {
+    fun onModifyLove(tour: Tour, callback: (Boolean) -> Unit) {
+        GlobalScope.launch {
+            val isLove = database.loveDao().doesItemExist(tour.tourID)
+            if (isLove) {
+                database.loveDao().deleteItem(tour.tourID)
+                RealTime.delete("$LOVE/${authSignIn!!.UId}/${tour.tourID}", {}, {})
+                callback(false)
+            } else {
+                val love = LoveItem(tourName = tour.tourName, tourId = tour.tourID)
+                database.loveDao().insertItem(love)
+                FirebaseDatabase.getInstance().getReference("LOVE")
+                    .child(authSignIn!!.UId)
+                    .child(tour.tourID)
+                    .setValue(love)
+                    .addOnSuccessListener {
+                        callback(true)
+                    }
+                    .addOnFailureListener {
+                        callback(false)
+                    }
+            }
+        }
 
     }
 
@@ -265,11 +466,9 @@ class AppViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-    val listChatCurrent = mutableStateOf<MutableList<Chat>>(mutableListOf())
-
     fun gotoChatByTour(tour: Tour, nav: NavController) {
-
-        checkExitConversion(tour) { b, id ->
+        lastChatTour = tour
+        checkExitConversion { b, id ->
             if (b) {
                 val reference = realtime.getReference(CHAT)
                     .child(id)
@@ -286,48 +485,36 @@ class AppViewModel @Inject constructor() : ViewModel() {
                     time = timeNow(),
                     chatType = ChatType.FIRST_MESSAGE
                 )
+
                 firstChat.idChat = reference.push().key.toString()
                 reference.child(firstChat.idChat).setValue(firstChat)
                     .addOnSuccessListener {
+                        Firestore.updateAsync("$CONVERSION/$id", hashMapOf<String, Any>().apply {
+                            put("lastChatTourId", tour.tourID)
+                        },{
+                        },{
+
+                        })
                         nav.navigationTo(ClientScreen.ChatScreen.route)
                     }
                     .addOnFailureListener {
                         showToast(it.message.toString())
                     }
             } else {
-                createNewChatWitdConversion(tour, nav)
+                createNewChatWithConversion(tour, nav)
             }
         }
     }
 
-    private fun getListChatById(tour: Tour, id: String, callback: (MutableList<Chat>) -> Unit) {
-        val listChat = mutableListOf<Chat>()
-        realtime.getReference(CHAT)
-            .child(tour.tourID!!)
-            .child(id)
-            .get()
-            .addOnSuccessListener { snapshot ->
-                for (chatSnapshot in snapshot.children) {
-                    val chat = chatSnapshot.getValue(Chat::class.java)
-                    if (chat != null) {
-                        listChat.add(chat)
-                    }
-                }
-                callback(listChat)
-            }
-            .addOnFailureListener {
-                callback(mutableListOf())
-            }
-    }
 
-
-    private fun createNewChatWitdConversion(tour: Tour, nav: NavController) {
+    private fun createNewChatWithConversion(tour: Tour, nav: NavController) {
         val chatWithConversion = ConversionChat(
             converId = "",
             clientName = authSignIn?.Name.toString(),
             clientId = authSignIn?.UId!!,
             clientImage = authSignIn?.Image.toString(),
             lastMessageSender = "",
+            lastChatTourId = tour.tourID,
             lastSenderId = authSignIn?.UId!!,
             lastMessageTime = timeNow(),
             lastMessageClientRead = false,
@@ -358,7 +545,9 @@ class AppViewModel @Inject constructor() : ViewModel() {
                 reference.child(firstChat.idChat).setValue(firstChat)
                     .addOnSuccessListener {
                         nav.navigationTo(ClientScreen.ChatScreen.route)
-                        authSignIn!!.ConversionChatId= chatWithConversion.converId
+                        authSignIn = authSignIn!!.apply {
+                            ConversionChatId = chatWithConversion.converId
+                        }
                         Firestore.updateAsync("$USERS/${firstChat.senderId}", hashMapOf<String, Any>().apply {
                             put("conversionChatId",chatWithConversion.converId)
                         })
@@ -372,7 +561,7 @@ class AppViewModel @Inject constructor() : ViewModel() {
             }
     }
 
-    fun checkExitConversion(tour: Tour, callback: (Boolean, String) -> Unit) {
+    fun checkExitConversion(callback: (Boolean, String) -> Unit) {
         val db = Firebase.firestore
         db.collection(CONVERSION)
             .whereEqualTo("clientId", authSignIn!!.UId)
@@ -415,6 +604,97 @@ class AppViewModel @Inject constructor() : ViewModel() {
         })
     }
 
+    fun sendMessage(message: String, idTour: String, callback: () -> Unit) {
+        val reference = realtime.getReference(CHAT)
+            .child(authSignIn!!.ConversionChatId)
+
+        val firstChat = Chat(
+            idChat = "",
+            content = message,
+            staffId = "",
+            clientId = authSignIn!!.UId,
+            staffImage = "",
+            tourId = idTour,
+            senderId = authSignIn!!.UId,
+            clientImage = authSignIn!!.Image,
+            time = timeNow(),
+            chatType = ChatType.MESSAGE
+        )
+
+        firstChat.idChat = reference.push().key.toString()
+        reference.child(firstChat.idChat).setValue(firstChat)
+            .addOnFailureListener {
+                showToast(it.message.toString())
+            }
+            .addOnSuccessListener {
+                callback.invoke()
+            }
+    }
+
+    fun getUserById(id: String, callback: (Users?) -> Unit) {
+        firestore.collection(USERS)
+            .document(id)
+            .get()
+            .addOnSuccessListener {
+                if (it.exists()) {
+                    callback(it.toObject(Users::class.java)!!)
+                } else {
+                    callback(null)
+                }
+            }
+            .addOnFailureListener {
+                Log.d("TAG", "getUserById: ${it.message}")
+                callback(null)
+            }
+    }
+
+    fun checkExitEmail(email: String, callback: (Int) -> Unit) {
+        firestore.collection(USERS)
+            .whereEqualTo("email", email)
+            .get()
+            .addOnSuccessListener {
+                if (it.isEmpty) {
+                    callback(0)
+                } else {
+                    val users = it.documents.get(0).toObject(Users::class.java)
+                    if (users!!.LoginType == "Account") {
+                        callback(0)
+                    } else {
+                        callback(1)
+                    }
+                }
+            }
+            .addOnFailureListener {
+                showToast(it.message.toString())
+            }
+    }
+
+    fun sendMessage(message: String, idTour: String, currentId: String, callback: () -> Unit) {
+        val reference = realtime.getReference(CHAT)
+            .child(currentId)
+
+        val firstChat = Chat(
+            idChat = "",
+            content = message,
+            staffId = "",
+            clientId = authSignIn!!.UId,
+            staffImage = "",
+            tourId = idTour,
+            senderId = authSignIn!!.UId,
+            clientImage = authSignIn!!.Image,
+            time = timeNow(),
+            chatType = ChatType.MESSAGE
+        )
+
+        firstChat.idChat = reference.push().key.toString()
+        reference.child(firstChat.idChat).setValue(firstChat)
+            .addOnFailureListener {
+                showToast(it.message.toString())
+            }
+            .addOnSuccessListener {
+                callback.invoke()
+            }
+    }
 
 }
 

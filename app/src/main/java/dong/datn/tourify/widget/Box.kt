@@ -7,7 +7,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -48,8 +47,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -66,6 +65,8 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.PagerState
+import com.guru.fontawesomecomposelib.FaIcon
+import com.guru.fontawesomecomposelib.FaIconType
 import dong.datn.tourify.R
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.ui.theme.black
@@ -74,10 +75,8 @@ import dong.datn.tourify.ui.theme.lightGrey
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.white
 import dong.datn.tourify.ui.theme.whiteSmoke
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ViewParent(
     modifier: Modifier = Modifier,
@@ -94,6 +93,34 @@ fun ViewParent(
         softwareKeyboardController?.hide()
         coroutineScope.launch {
             onBack?.invoke()
+        }
+    })
+    Box(
+        modifier = modifier
+            .background(if (currentTheme == 1) white else black)
+            .fillMaxSize(1f),
+        contentAlignment = contentAlignment,
+        propagateMinConstraints = propagateMinConstraints,
+        content = content
+    )
+}
+
+@Composable
+fun ViewParentContent(
+    modifier: Modifier = Modifier,
+    contentAlignment: Alignment = Alignment.TopStart,
+    propagateMinConstraints: Boolean = false,
+    onBack: () -> Unit,
+    content: @Composable BoxScope.() -> Unit
+) {
+    val softwareKeyboardController = LocalSoftwareKeyboardController.current
+    val coroutineScope = rememberCoroutineScope()
+
+    BackHandler(onBack = {
+
+        softwareKeyboardController?.hide()
+        coroutineScope.launch {
+            onBack.invoke()
         }
     })
     Box(
@@ -186,6 +213,73 @@ fun IconView(
         )
     }
 }
+@Composable
+fun IconView2(
+    modifier: Modifier,
+    icon: ImageVector,
+    icSize: Int = 32,
+    tint: Color? = null,
+    onclick:() -> Unit
+) {
+    val context = LocalContext.current
+    val interactionSource = remember { MutableInteractionSource() }
+    Box(
+        modifier = modifier
+            .background(if (currentTheme == 1) whiteSmoke else iconBackground, shape = CircleShape)
+            .size(40.dp)
+            .clickable(interactionSource, null) {
+                onclick.invoke()
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            modifier = Modifier.size(icSize.dp),
+            contentDescription = "Check",
+            tint = tint ?: textColor(context)
+        )
+    }
+}
+
+
+@Composable
+fun IconView(
+    item: Any,
+    tint: Color = black,
+    icSize: Int = 24,
+    modifier: Modifier,
+    onclick: (() -> Unit?)? = null
+) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        when (item) {
+            is ImageVector -> Icon(
+                item as ImageVector,
+                contentDescription = "Image Vector",
+                tint = tint,
+                modifier = Modifier.size(icSize.dp)
+            )
+
+            is Painter -> Icon(
+                painter = item as Painter,
+                contentDescription = "Painter",
+                modifier = Modifier.size(icSize.dp),
+                tint = tint
+            )
+
+            else -> {
+                FaIcon(
+                    item as FaIconType.BrandIcon,
+                    tint = tint,
+                    modifier = Modifier.size(icSize.dp)
+                )
+            }
+        }
+        Box(modifier = Modifier
+            .matchParentSize()
+            .onClick { onclick?.invoke() })
+    }
+
+}
 
 @Composable
 fun InnerImageIcon(
@@ -196,14 +290,10 @@ fun InnerImageIcon(
     onclick: (() -> Unit?)? = null
 ) {
     val context = LocalContext.current
-    val interactionSource = remember { MutableInteractionSource() }
     Box(
         modifier = modifier
             .background(Color(0x90FFFFFF), shape = CircleShape)
-            .size(40.dp)
-            .clickable(interactionSource, null) {
-                onclick?.invoke()
-            },
+            .size(40.dp),
         contentAlignment = Alignment.Center
     ) {
         Icon(
@@ -212,6 +302,9 @@ fun InnerImageIcon(
             contentDescription = "Check",
             tint = tint ?: textColor(context)
         )
+        Box(modifier = Modifier
+            .matchParentSize()
+            .onClick { onclick?.invoke() })
     }
 }
 
@@ -324,7 +417,7 @@ fun AppButton(
     val isLoading = remember {
         mutableStateOf(loading)
     }
-    Row(
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .background(
@@ -334,24 +427,16 @@ fun AppButton(
                     ) else listOf(lightGrey, lightGrey)
                 ), shape = RoundedCornerShape(12.dp)
             )
-            .padding(vertical = 12.dp)
-            .onClick {
-                if (isEnable) {
-                    if (isLoading.value != null) {
-                        isLoading.value = 0
-                    }
-
-                    onClick.invoke()
-                }
-
-            },
+            .padding(vertical = 12.dp), contentAlignment = Alignment.Center
+    ) {
+        Row(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = text,
             fontSize = 16.sp,
-            color =if(isEnable) Color.White else black,
+            color = if (isEnable) Color.White else black,
             fontFamily = FontFamily(Font(R.font.poppins_bold)),
             modifier = Modifier.padding(horizontal = 16.dp),
             textAlign = TextAlign.Center
@@ -391,7 +476,19 @@ fun AppButton(
                 }
             }
         }
+        }
+        Box(modifier = Modifier
+            .matchParentSize()
+            .onClick {
+                if (isEnable) {
+                    if (isLoading.value != null) {
+                        isLoading.value = 0
+                    }
 
+                    onClick.invoke()
+                }
+
+            })
     }
 }
 
