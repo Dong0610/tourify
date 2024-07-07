@@ -50,7 +50,6 @@ import dong.datn.tourify.ui.theme.iconBackground
 import dong.datn.tourify.ui.theme.lightGrey
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.white
-import dong.datn.tourify.utils.CommonDivider
 import dong.datn.tourify.utils.TOUR
 import dong.datn.tourify.utils.heightPercent
 import dong.datn.tourify.utils.widthPercent
@@ -79,7 +78,6 @@ fun DetailPlaceScreen(nav: NavController, viewModel: AppViewModel, route: String
 
     ViewParent(onBack = {
         nav.navigationTo(route, ClientScreen.DetailPlaceScreen.route)
-
     }) {
 
         Box(
@@ -87,8 +85,8 @@ fun DetailPlaceScreen(nav: NavController, viewModel: AppViewModel, route: String
                 .fillMaxWidth(1f)
 
         ) {
-            VerScrollView {
-                Column(Modifier.fillMaxSize(1f)) {
+
+            Column(Modifier.fillMaxSize(1f)) {
                     HorizontalPager(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -160,7 +158,6 @@ fun DetailPlaceScreen(nav: NavController, viewModel: AppViewModel, route: String
                             }
                         }
                     }
-                }
             }
 
             Row(

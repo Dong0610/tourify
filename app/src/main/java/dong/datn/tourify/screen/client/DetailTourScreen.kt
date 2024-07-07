@@ -49,7 +49,7 @@ import com.guru.fontawesomecomposelib.FaIcon
 import com.guru.fontawesomecomposelib.FaIcons
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
-import dong.datn.tourify.app.appViewModels
+import dong.datn.tourify.app.viewModels
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.model.Comment
 import dong.datn.tourify.model.createCommentList
@@ -57,15 +57,12 @@ import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.gold
 import dong.datn.tourify.ui.theme.gray
 import dong.datn.tourify.ui.theme.iconBackground
-import dong.datn.tourify.ui.theme.lime
 import dong.datn.tourify.ui.theme.red
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.white
 import dong.datn.tourify.ui.theme.whiteSmoke
 import dong.datn.tourify.utils.CommonProgressBar
 import dong.datn.tourify.utils.heightPercent
-import dong.datn.tourify.utils.toDp
-import dong.datn.tourify.utils.widthPercent
 import dong.datn.tourify.widget.ButtonNext
 import dong.datn.tourify.widget.DotIndicator
 import dong.datn.tourify.widget.InnerImageIcon
@@ -340,7 +337,7 @@ fun LoadReview(tour: Tour) {
     val schedule = remember {
         mutableStateOf<Schedule?>(null)
     }
-    appViewModels?.loadScheduleByTour(tour.tourID) {
+    viewModels.loadScheduleByTour(tour.tourID) {
         isLoading.value = true
         schedule.value = it
     }
@@ -402,7 +399,7 @@ fun LoadSchedule(tour: Tour) {
     val schedule = remember {
         mutableStateOf<Schedule?>(null)
     }
-    appViewModels?.loadScheduleByTour(tour.tourID) {
+    viewModels.loadScheduleByTour(tour.tourID) {
         isLoading.value = true
         schedule.value = it
     }
@@ -434,7 +431,7 @@ fun LoadSchedule(tour: Tour) {
                             font = Font(R.font.poppins_semibold),
                             textSize = 16
                         )
-                        it.ListDetail!!.forEach { data ->
+                        it.ListDetail.forEach { data ->
                             StyledText(data = data)
                         }
                     }
@@ -470,7 +467,7 @@ fun ItemComment(comment: Comment) {
         mutableStateOf<Users?>(null)
     }
     val context = LocalContext.current
-    appViewModels?.getUserComment(comment.uId) {
+    viewModels?.getUserComment(comment.uId) {
         userComment.value = it!!
     }
     Row(Modifier.fillMaxSize()) {
@@ -612,7 +609,7 @@ fun LoadService(tour: Tour) {
     val service = remember {
         mutableStateOf<Service?>(null)
     }
-    appViewModels?.loadServiceByTour(tour.tourID) {
+    viewModels?.loadServiceByTour(tour.tourID) {
         isLoading.value = true
         service.value = it
     }

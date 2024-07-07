@@ -37,7 +37,6 @@ import com.guru.fontawesomecomposelib.FaIcon
 import com.guru.fontawesomecomposelib.FaIcons
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
-import dong.datn.tourify.app.authSignIn
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.lawnGreen
 import dong.datn.tourify.ui.theme.lightGrey

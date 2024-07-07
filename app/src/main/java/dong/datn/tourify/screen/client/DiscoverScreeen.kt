@@ -1,5 +1,6 @@
 package dong.datn.tourify.screen.client
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
@@ -23,10 +25,12 @@ import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
@@ -38,9 +42,14 @@ import androidx.navigation.NavHostController
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.app.currentTheme
+import dong.datn.tourify.app.database
+import dong.datn.tourify.app.viewModels
 import dong.datn.tourify.ui.theme.appColor
+import dong.datn.tourify.ui.theme.black
 import dong.datn.tourify.ui.theme.darkGray
+import dong.datn.tourify.ui.theme.iconBackground
 import dong.datn.tourify.ui.theme.lightGrey
+import dong.datn.tourify.ui.theme.red
 import dong.datn.tourify.ui.theme.white
 import dong.datn.tourify.utils.heightPercent
 import dong.datn.tourify.widget.IconView
@@ -48,13 +57,20 @@ import dong.datn.tourify.widget.InnerImageIcon
 import dong.datn.tourify.widget.RoundedImage
 import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.ViewParent
-import dong.duan.ecommerce.library.showToast
+import dong.datn.tourify.widget.navigationTo
+import dong.datn.tourify.widget.onClick
 import dong.duan.livechat.widget.SearchBox
+import dong.duan.travelapp.model.Tour
+import kotlinx.coroutines.launch
 
+@SuppressLint("UnrememberedMutableState", "MutableCollectionMutableState")
 @Composable
 fun DiscoverScreen(navController: NavHostController, viewModels: AppViewModel) {
     val context = LocalContext.current
-   
+    val listCurrent = viewModels.listTour
+    val listSearch = remember {
+        mutableStateOf(viewModels.listTour.value)
+    }
     ViewParent(onBack = {
         viewModels.currentIndex.value = 0
         navController.navigate(ClientScreen.HomeClientScreen.route) {
@@ -89,18 +105,28 @@ fun DiscoverScreen(navController: NavHostController, viewModels: AppViewModel) {
                     .height(1.dp)
                     .background(color = Color(0xFFdddddd), shape = RectangleShape)
             )
-
-
-            val list = (1..10).map { it.toString() }
             Spacer(modifier = Modifier.height(12.dp))
             Row(
                 Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
             ) {
-                SearchBox {
-                    showToast(it)
-                }
+                SearchBox({
+                    if (it.trim().isEmpty()) {
+                        listSearch.value = listCurrent.value
+                    }
+                }, {
+                    listSearch.value = if (it.isEmpty()) {
+                        listCurrent.value
+                    } else {
+                        listCurrent.value.filter { item ->
+                            item.tourName.contains(
+                                it,
+                                ignoreCase = true
+                            ) || item.salePrice.toString().contains(it, ignoreCase = true)
+                        }.toMutableList()
+                    }
+                })
             }
             Spacer(modifier = Modifier.height(6.dp))
             LazyVerticalGrid(
@@ -114,8 +140,11 @@ fun DiscoverScreen(navController: NavHostController, viewModels: AppViewModel) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 content = {
-                    items(list.size) { index ->
-                      ItemDiscover()
+                    this.itemsIndexed(listSearch.value) { index, it ->
+                        ItemDiscover(it) {
+                            viewModels.detailTour.value = it
+                            navController.navigationTo(ClientScreen.DetailTourScreen.route,ClientScreen.DiscoveryScreen.route)
+                        }
                     }
                 }
             )
@@ -125,20 +154,23 @@ fun DiscoverScreen(navController: NavHostController, viewModels: AppViewModel) {
     }
 }
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun ItemDiscover() {
+fun ItemDiscover(tour: Tour, onSelect: (Tour) -> Unit) {
+    val coroutineScope = rememberCoroutineScope()
+    val loveState = remember {
+        mutableStateOf(false)
+    }
+
+    coroutineScope.launch {
+        loveState.value= database.loveDao().doesItemExist(tour.tourID)
+    }
     Box(
         Modifier
             .border(width = 1.dp, color = lightGrey, shape = RoundedCornerShape(12.dp))
-            .background(white)
+            .background(if (currentTheme == 1) white else iconBackground)
             .heightPercent(30f)
-            .clip(RoundedCornerShape(4.dp))
-            .shadow(
-                spotColor = Color(0xD5ECE9E9),
-                ambientColor = Color(0xD5ECE9E9),
-                elevation = 2.dp,
-                shape = RoundedCornerShape(2.dp)
-            )
+            .clip(RoundedCornerShape(12.dp)), contentAlignment = Alignment.TopEnd
 
     ) {
         Column(
@@ -148,14 +180,19 @@ fun ItemDiscover() {
         ) {
             Row(Modifier.heightPercent(16f)) {
                 RoundedImage(
-                    R.drawable.img_test_data_1,
+                    tour.tourImage.get(0),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxSize(),
                 )
             }
             Spacer(modifier = Modifier.height(6.dp))
-            TextView(text = "Travel name", modifier = Modifier, font = Font(R.font.poppins_medium))
+            TextView(
+                text = tour.tourName,
+                maxLine = 2,
+                modifier = Modifier,
+                font = Font(R.font.poppins_medium)
+            )
             Spacer(modifier = Modifier.weight(1f))
             Row(Modifier.fillMaxWidth()) {
                 TextView(
@@ -178,7 +215,7 @@ fun ItemDiscover() {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 TextView(
-                    text = "100",
+                    text = tour.tourAddress,
                     modifier = Modifier,
                     font = Font(R.font.poppins_medium),
                     color = lightGrey
@@ -186,12 +223,19 @@ fun ItemDiscover() {
             }
 
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            InnerImageIcon(
-                modifier = Modifier.size(32.dp),
-                icon = Icons.Rounded.Favorite,
-                icSize = 20
-            )
+        Box(Modifier.matchParentSize().onClick {
+            onSelect.invoke(tour)
+        })
+        InnerImageIcon(
+            modifier = Modifier
+                .size(32.dp),
+            icon = Icons.Rounded.Favorite,
+            icSize = 20,
+            tint = if (loveState.value) red else black
+        ){
+            viewModels.onModifyLove(tour) {
+                loveState.value = it
+            }
         }
         Spacer(modifier = Modifier.width(12.dp))
     }

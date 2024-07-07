@@ -2,6 +2,7 @@ package dong.datn.tourify.app
 
 import android.content.Context
 import android.content.SharedPreferences
+import dong.duan.travelapp.model.Tour
 
 class SharedPreference {
     private val sharedPreferences: SharedPreferences =
@@ -88,8 +89,27 @@ var isRequestPermission: Boolean
 var currentTheme: Int
     get() = sharedPreferences.getInt("currentTheme", 1)
     set(value) = sharedPreferences.putInt("currentTheme", value)
+var isShowTrailer: Boolean
+    get() = sharedPreferences.getBollean("showTrailer", true)
+    set(value) = sharedPreferences.putBollean("showTrailer", value)
 
+var lastChatTour: Tour?
+    get() {
+        val data = sharedPreferences.getString("lastChatTour", "")
+        if (data != null) {
+            return if (data.isEmpty()) null else Tour().fromJson(data)
+        } else {
+            return null
+        }
+    }
+    set(value) {
+        if (value != null) {
+            sharedPreferences.putString("lastChatTour", value.toJson())
+        } else {
+            sharedPreferences.putString("lastChatTour", "")
+        }
 
+    }
 
 
 

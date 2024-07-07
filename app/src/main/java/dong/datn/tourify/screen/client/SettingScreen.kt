@@ -45,6 +45,7 @@ import dong.datn.tourify.utils.changeTheme
 import dong.datn.tourify.widget.IconView
 import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.ViewParent
+import dong.datn.tourify.widget.navigationTo
 import dong.datn.tourify.widget.onClick
 
 @Composable
@@ -54,15 +55,8 @@ fun SettingScreen(nav: NavController, viewModels: AppViewModel) {
     val isDarkTheme = remember {
         mutableStateOf(currentTheme == -1)
     }
-
     ViewParent(onBack = {
-        nav.navigate(ClientScreen.ProfileScreen.route) {
-            nav.graph.startDestinationRoute?.let { route ->
-                popUpTo(route) { saveState = true }
-            }
-            launchSingleTop = true
-            restoreState = true
-        }
+        nav.navigationTo(ClientScreen.ProfileScreen.route)
     }) {
         Column(
             Modifier
@@ -76,13 +70,7 @@ fun SettingScreen(nav: NavController, viewModels: AppViewModel) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconView(modifier = Modifier, icon = Icons.Rounded.KeyboardArrowLeft) {
-                    nav.navigate(ClientScreen.ProfileScreen.route) {
-                        nav.graph.startDestinationRoute?.let { route ->
-                            popUpTo(route) { saveState = true }
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+                    nav.navigationTo(ClientScreen.ProfileScreen.route)
                 }
 
                 TextView(

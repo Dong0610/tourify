@@ -9,6 +9,8 @@ const val SERVICE: String = "SERVICE"
 const val REVIEW: String = "REVIEW"
 const val CONVERSION = "CONVERSION"
 const val CHAT:String= "CHAT"
+const val NOTIFICATION = "NOTIFICATION"
+const val LOVE: String = "LOVE"
 
 
 

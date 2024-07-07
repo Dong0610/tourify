@@ -16,8 +16,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -28,21 +36,37 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.rememberPagerState
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import dong.datn.tourify.app.appViewModels
+import dong.datn.tourify.R
 import dong.datn.tourify.app.currentTheme
+import dong.datn.tourify.app.isShowTrailer
+import dong.datn.tourify.app.viewModels
 import dong.datn.tourify.ui.theme.TourifyTheme
 import dong.datn.tourify.ui.theme.black
 import dong.datn.tourify.ui.theme.navigationBar
 import dong.datn.tourify.ui.theme.white
 import dong.datn.tourify.utils.changeTheme
+import dong.datn.tourify.utils.heightPercent
+import dong.datn.tourify.utils.widthPercent
 import dong.datn.tourify.widget.BottomNavigationBar
+import dong.datn.tourify.widget.RoundedImage
+import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.animComposable
+import dong.datn.tourify.widget.onClick
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.Locale
@@ -59,14 +83,12 @@ sealed class ClientScreen(var route: String) {
     data object DetailTourScreen : ClientScreen("detail_tour_client")
     data object DetailPlaceScreen : ClientScreen("detail_place_client")
     data object BookingNowScreen : ClientScreen("booking_now_client")
-   // data object ConversionScreen : ClientScreen("conversion_screen")
     data object ChatScreen : ClientScreen("chat_screen")
     data object UpdatePasswordScreen : ClientScreen("update_password_screen")
 }
 
 
 open class MainActivity : ComponentActivity() {
-    val viewModels = appViewModels!!
     private fun getCountry(context: Context): String? {
         if (ContextCompat.checkSelfPermission(
                 context,
@@ -75,6 +97,7 @@ open class MainActivity : ComponentActivity() {
         ) {
             return null
         }
+
 
         val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         val geocoder = Geocoder(context, Locale.getDefault())
@@ -108,6 +131,9 @@ open class MainActivity : ComponentActivity() {
 
         changeTheme(currentTheme,applicationContext)
         setContent {
+            LaunchedEffect(key1 = " listNotifications.value.size") {
+                viewModels.listenerNotification()
+            }
 
             val coroutineScope = rememberCoroutineScope()
             val country = remember { mutableStateOf<String?>(null) }
@@ -135,12 +161,111 @@ open class MainActivity : ComponentActivity() {
                 }
             }
             TourifyTheme {
-
                 MainNavigation(country)
 
             }
+            if (isShowTrailer) {
+                TrailerImageDialog()
+            }
+
         }
 
+    }
+
+    @OptIn(ExperimentalPagerApi::class)
+    @Composable
+    fun TrailerImageDialog() {
+        val showDialog = remember { mutableStateOf(true) }
+
+        if (showDialog.value) {
+            Dialog(onDismissRequest = { showDialog.value = false }) {
+
+                TrailerImageContent(
+                    onDismiss = {
+                        showDialog.value = false
+                        isShowTrailer = false
+                    }
+                )
+
+            }
+        }
+    }
+
+    @OptIn(ExperimentalPagerApi::class)
+    @Composable
+    private fun TrailerImageContent(onDismiss: () -> Unit) {
+        val coroutineScope = rememberCoroutineScope()
+        val listImage =
+            listOf(
+                R.drawable.trailer_img_1,
+                R.drawable.trailer_img_2,
+                R.drawable.trailer_img_3,
+                R.drawable.trailer_img_4,
+                R.drawable.trailer_img_5
+            )
+        val pagerState = rememberPagerState(
+            pageCount = listImage.size,
+            initialOffscreenLimit = 2,
+            infiniteLoop = true,
+            initialPage = 0,
+        )
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(3000)
+                coroutineScope.launch {
+                    val nextPage = (pagerState.currentPage + 1) % listImage.size
+                    pagerState.animateScrollToPage(nextPage)
+                }
+            }
+        }
+
+        val indexSlideImage = remember {
+            mutableStateOf(1)
+        }
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            HorizontalPager(modifier = Modifier, state = pagerState) { page ->
+                RoundedImage(
+                    listImage.get(page),
+                    contentScale = ContentScale.FillBounds,
+                    modifier = Modifier.heightPercent(80f),
+                    shape = RoundedCornerShape(6.dp)
+                )
+                indexSlideImage.value = page
+            }
+        }
+
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .wrapContentHeight(), horizontalArrangement = Arrangement.End
+        ) {
+            Box(
+                Modifier
+                    .widthPercent(40f)
+                    .height(40.dp)
+                    .background(white, shape = RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                TextView(
+                    text = getString(R.string.continues),
+                    Modifier,
+                    color = black,
+                    font = Font(R.font.poppins_semibold)
+                )
+                Box(modifier = Modifier
+                    .matchParentSize()
+                    .onClick { onDismiss.invoke() })
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
 
     }
 
@@ -181,7 +306,6 @@ open class MainActivity : ComponentActivity() {
                     startDestination = ClientScreen.HomeClientScreen.route
                 ) {
                     animComposable("home_client") {
-                        systemUiController.isNavigationBarVisible=false
                         LaunchedEffect(Unit) {
                             bottomBarState.value = true
                             keyboardController?.hide()
@@ -277,7 +401,6 @@ open class MainActivity : ComponentActivity() {
                     }
 
                     animComposable(ClientScreen.ChatScreen.route) {
-                        systemUiController.isNavigationBarVisible=true
                         LaunchedEffect(Unit) {
                             keyboardController?.hide()
 

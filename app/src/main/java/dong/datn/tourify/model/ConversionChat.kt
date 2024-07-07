@@ -15,6 +15,7 @@ data class ConversionChat(
     var lastSenderId:String="",
     var lastMessageSender: String = "",
     var lastMessageTime: String = "",
+    var lastChatTourId:String = "",
     var lastMessageClientRead: Boolean = false,
     var lastMessageStaffRead: Boolean = false,
     ): BaseModel<ConversionChat>()

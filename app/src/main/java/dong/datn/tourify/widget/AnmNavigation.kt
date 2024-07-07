@@ -12,7 +12,7 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
-import dong.datn.tourify.app.appViewModels
+import dong.datn.tourify.app.viewModels
 import java.io.Serializable
 
 
@@ -80,7 +80,7 @@ fun NavController.navigationTo(route: String) {
 fun NavController.navigationTo(route: String,backScreen:String?=null) {
     this.navigate(route) {
         if(backScreen != null){
-            appViewModels?.prevScreen!!.value = backScreen
+            viewModels?.prevScreen!!.value = backScreen
         }
         graph.startDestinationRoute?.let { route ->
             popUpTo(route) { saveState = true }
