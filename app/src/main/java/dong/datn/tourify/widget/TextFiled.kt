@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -156,6 +157,7 @@ fun InputValue(
     hint: String = "",
     modifier: Modifier=Modifier,
     maxLines: Int=1,
+    teAlignment: TextAlign= TextAlign.Center,
     textSize: TextUnit =16.sp,
     keyboardType: KeyboardType = KeyboardType.Text,
     onValueChange: (String) -> Unit
@@ -175,6 +177,7 @@ fun InputValue(
         BasicTextField(
             value = value,
             onValueChange = { onValueChange(it) },
+
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 8.dp)
@@ -182,6 +185,7 @@ fun InputValue(
             textStyle = TextStyle(
                 color = textColor(context),
                 fontSize = textSize,
+                textAlign = teAlignment,
                 fontFamily = FontFamily(Font(R.font.poppins_medium))
             ),
             maxLines = maxLines,

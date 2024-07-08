@@ -62,6 +62,9 @@ sealed class AccountScreen(var route: String) {
     data object LanguageScreen : AccountScreen("language")
     data object SignUpScreen : AccountScreen("signup")
     data object SignInScreen : AccountScreen("signin")
+    data object ForgetPassWordScreen : AccountScreen("forget_password")
+    data object EnterOtpCodeScreen : AccountScreen("enter_tp_code")
+    data object ResetPassWordScreen : AccountScreen("update_password")
 }
 
 @AndroidEntryPoint
@@ -256,6 +259,17 @@ open class AccountActivity : ComponentActivity() {
                     signInWithGoogle()
                 })
             }
+            animComposable(AccountScreen.ForgetPassWordScreen.route) {
+                ForgetPassScreen(navController, viewModels)
+            }
+
+            animComposable(AccountScreen.EnterOtpCodeScreen.route) {
+                EnterOtpScreen(navController, viewModels)
+            }
+            animComposable(AccountScreen.ResetPassWordScreen.route) {
+                ResetPassScreen(navController, viewModels)
+            }
+
 
 
         }

@@ -159,4 +159,15 @@
     <string name="login_at">"You have successfully logged in on the device "</string>
     <string name="at_time">" at "</string>
     <string name="invalid_email">This email not register an app. Try again</string>
+    <string name="check_send_otp">Check the email that you entered and entered OTP Code we sent you</string>
+    <string name="otp_code_not_true">Otp verification not true</string>
+    <string name="reset_password_success">Password has been updated</string>
+    <string name="reset_password_at_time">"Your password has just been changed at the time "</string>
+    <string name="payment_invoice">Payment Invoice</string>
+    <string name="tour_name">Tour name</string>
+    <string name="tour_time">Time</string>
+    <string name="content">Content</string>
+    <string name="number">Number</string>
+    <string name="count">Count</string>
+    <string name="price">Price</string>
 </resources>

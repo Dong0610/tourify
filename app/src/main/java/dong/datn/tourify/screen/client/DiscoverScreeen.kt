@@ -52,6 +52,7 @@ import dong.datn.tourify.ui.theme.lightGrey
 import dong.datn.tourify.ui.theme.red
 import dong.datn.tourify.ui.theme.white
 import dong.datn.tourify.utils.heightPercent
+import dong.datn.tourify.utils.toCurrency
 import dong.datn.tourify.widget.IconView
 import dong.datn.tourify.widget.InnerImageIcon
 import dong.datn.tourify.widget.RoundedImage
@@ -196,13 +197,13 @@ fun ItemDiscover(tour: Tour, onSelect: (Tour) -> Unit) {
             Spacer(modifier = Modifier.weight(1f))
             Row(Modifier.fillMaxWidth()) {
                 TextView(
-                    text = "100",
+                    text = tour.tourPrice.toCurrency() ,
                     modifier = Modifier,
                     font = Font(R.font.poppins_medium),
                     color = Color.Red
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                TextView(text = "100", modifier = Modifier, font = Font(R.font.poppins_medium))
+                TextView(text = tour.tourPrice.toCurrency(), modifier = Modifier, font = Font(R.font.poppins_medium))
             }
             Spacer(modifier = Modifier.height(2.dp))
 

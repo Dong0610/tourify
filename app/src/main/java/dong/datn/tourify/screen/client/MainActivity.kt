@@ -50,14 +50,20 @@ import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
 import dong.datn.tourify.R
+import dong.datn.tourify.app.ContextProvider.Companion.viewModel
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.app.isShowTrailer
 import dong.datn.tourify.app.viewModels
+import dong.datn.tourify.firebase.Firestore
+import dong.datn.tourify.screen.view.BillBooking
 import dong.datn.tourify.ui.theme.TourifyTheme
 import dong.datn.tourify.ui.theme.black
 import dong.datn.tourify.ui.theme.navigationBar
 import dong.datn.tourify.ui.theme.white
+import dong.datn.tourify.utils.TOUR
 import dong.datn.tourify.utils.changeTheme
 import dong.datn.tourify.utils.heightPercent
 import dong.datn.tourify.utils.widthPercent
@@ -66,6 +72,7 @@ import dong.datn.tourify.widget.RoundedImage
 import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.animComposable
 import dong.datn.tourify.widget.onClick
+import dong.duan.travelapp.model.Tour
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -85,6 +92,7 @@ sealed class ClientScreen(var route: String) {
     data object BookingNowScreen : ClientScreen("booking_now_client")
     data object ChatScreen : ClientScreen("chat_screen")
     data object UpdatePasswordScreen : ClientScreen("update_password_screen")
+    data object BillBooking : ClientScreen("bill_booking_client")
 }
 
 
@@ -133,6 +141,10 @@ open class MainActivity : ComponentActivity() {
         setContent {
             LaunchedEffect(key1 = " listNotifications.value.size") {
                 viewModels.listenerNotification()
+
+                Firestore.getListData<Tour>(Firebase.firestore.collection("$TOUR")) {
+                    viewModel.listTour.value = it ?: mutableListOf()
+                }
             }
 
             val coroutineScope = rememberCoroutineScope()
@@ -303,7 +315,7 @@ open class MainActivity : ComponentActivity() {
                 NavHost(
                     modifier = Modifier.padding(insertPadding),
                     navController = navController,
-                    startDestination = ClientScreen.HomeClientScreen.route
+                    startDestination = ClientScreen.BillBooking.route
                 ) {
                     animComposable("home_client") {
                         LaunchedEffect(Unit) {
@@ -351,6 +363,9 @@ open class MainActivity : ComponentActivity() {
                             bottomBarState.value = false
                         }
                         UpdateProfileScreen(navController, viewModels)
+                    }
+                    animComposable(ClientScreen.BillBooking.route) {
+                        BillBooking(navController)
                     }
                     animComposable(ClientScreen.SettingScreen.route) {
 

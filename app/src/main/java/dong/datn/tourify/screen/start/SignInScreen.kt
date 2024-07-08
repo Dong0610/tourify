@@ -44,6 +44,7 @@ import dong.datn.tourify.widget.RoundedImage
 import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.VerScrollView
 import dong.datn.tourify.widget.ViewParent
+import dong.datn.tourify.widget.navigationTo
 import dong.datn.tourify.widget.onClick
 import dong.duan.ecommerce.library.showToast
 import dong.duan.livechat.widget.InputValue
@@ -135,7 +136,8 @@ fun SignInScreen(navController: NavHostController, viewModels: AppViewModel, onF
                             modifier = Modifier,
                             color = appColor
                         ) {
-                            viewModels.fogetPassword(email.value)
+                            navController.navigationTo(AccountScreen.ForgetPassWordScreen.route)
+                            //viewModels.fogetPassword(email.value)
                         }
                     }
 

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -35,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
@@ -152,6 +154,7 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                 Column(
                     Modifier
                         .fillMaxSize(1f)
+                        .imePadding()
                 ) {
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(Modifier.fillMaxWidth()) {
@@ -222,11 +225,11 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
 
                     ArrowValue(
                         name = context.getString(R.string.adult),
-                        price = tour.value!!.salePrice!!
+                        price = tour.value!!.salePrice
                     ) {
                         countAdutl.value = it
                         totalPrice.value =
-                            (tour.value!!.salePrice!! * countAdutl.value) + (tour.value!!.salePrice!! * 0.75f * countChild.value)
+                            (tour.value!!.salePrice * countAdutl.value) + (tour.value!!.salePrice!! * 0.75f * countChild.value)
                         if (totalPrice.value == 0.0 || it == 0) {
                             isDisable.value = true
                         } else {
@@ -259,13 +262,16 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                                 width = 1.dp,
                                 shape = RoundedCornerShape(12.dp),
                                 color = textColor(context)
-                            ), verticalAlignment = Alignment.CenterVertically
+                            ), verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start
                     ) {
                         InputValue(
                             value = notes.value,
                             modifier = Modifier.fillMaxWidth(),
                             hint = context.getString(R.string.notes) + "...",
+                            teAlignment = TextAlign.Start,
                             maxLines = 100
+
                         ) {
                             notes.value = it
                         }
@@ -302,17 +308,18 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
         }
     }
     if (isShowDialog.value) {
-        CustomDialog(totalPrice.value) {
+        CustomDialog(totalPrice.value, {
             isShowDialog.value = false
-
-        }
+        }, {
+                
+        })
     }
 
 }
 
 
 @Composable
-fun CustomDialog(totalPrice: Double, onDismiss: () -> Unit) {
+fun CustomDialog(totalPrice: Double, onDismiss: () -> Unit, onConfirm: () -> Unit) {
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true)
@@ -370,7 +377,7 @@ fun CustomDialog(totalPrice: Double, onDismiss: () -> Unit) {
                     Box(
                         Modifier
                             .onClick {
-                                onDismiss()
+                                onConfirm.invoke()
                             }
                             .height(40.dp)
                             .weight(1f)
@@ -429,8 +436,10 @@ fun ArrowValue(name: String, price: Double, max: Int = 10, onTouch: (Int) -> Uni
         }
         Spacer(modifier = Modifier.weight(1f))
         Row(Modifier.widthPercent(30f), horizontalArrangement = Arrangement.SpaceBetween) {
-            FaIcon(faIcon = FaIcons.Minus,
+            Icon(
+                painter = painterResource(id = R.drawable.ic_round_remove),
                 tint = textColor(context = context),
+                contentDescription = "Remove",
                 modifier = Modifier.onClick {
                     count.value--;
                     if (count.value <= 0) {
@@ -447,7 +456,9 @@ fun ArrowValue(name: String, price: Double, max: Int = 10, onTouch: (Int) -> Uni
                 textSize = 16
             )
             Spacer(modifier = Modifier.width(12.dp))
-            FaIcon(faIcon = FaIcons.Plus,
+            Icon(
+                painter = painterResource(id = R.drawable.ic_round_add),
+                contentDescription = "Add",
                 tint = textColor(context = context),
                 modifier = Modifier.onClick {
                     count.value++;
@@ -476,7 +487,7 @@ fun DropdownSelectTime(
 
     val selectedText = remember {
         mutableStateOf(
-            tour.tourTime?.get(0)!!
+            tour.tourTime.get(0)
         )
     }
 
@@ -520,7 +531,7 @@ fun DropdownSelectTime(
             ExposedDropdownMenu(expanded = expanded.value,
                 modifier = Modifier.padding(start = 6.dp),
                 onDismissRequest = { expanded.value = false }) {
-                tour.tourTime!!.forEach { item ->
+                tour.tourTime.forEach { item ->
                     DropdownMenuItem(text = {
                         TextView(
                             onclick = {

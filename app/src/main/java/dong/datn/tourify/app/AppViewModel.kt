@@ -33,9 +33,11 @@ import dong.datn.tourify.model.Notification
 import dong.datn.tourify.model.OtpCode
 import dong.datn.tourify.model.Places
 import dong.datn.tourify.screen.client.ClientScreen
+import dong.datn.tourify.screen.start.AccountScreen
 import dong.datn.tourify.utils.CHAT
 import dong.datn.tourify.utils.CONVERSION
 import dong.datn.tourify.utils.LOVE
+import dong.datn.tourify.utils.MailSender
 import dong.datn.tourify.utils.NOTIFICATION
 import dong.datn.tourify.utils.SCHEDULE
 import dong.datn.tourify.utils.SERVICE
@@ -44,10 +46,12 @@ import dong.datn.tourify.utils.USERS
 import dong.datn.tourify.utils.timeNow
 import dong.datn.tourify.widget.navigationTo
 import dong.duan.ecommerce.library.showToast
+import dong.duan.livechat.utility.generateNumericOTP
 import dong.duan.livechat.utility.toJson
 import dong.duan.travelapp.model.Schedule
 import dong.duan.travelapp.model.Service
 import dong.duan.travelapp.model.Tour
+import dong.duan.travelapp.model.TourTime
 import dong.duan.travelapp.model.Users
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -81,7 +85,7 @@ class AppViewModel @Inject constructor() : ViewModel() {
     var currentIndex = mutableStateOf(0)
     var otpCodeResponse =
         mutableStateOf<OtpCode?>(null)
-
+    var currentTourTime = mutableStateOf<TourTime?>(null)
 
     val firestore = Firebase.firestore
     val auth = Firebase.auth
@@ -581,16 +585,17 @@ class AppViewModel @Inject constructor() : ViewModel() {
 
 
     fun sendVerificationEmail(email: String, nav: NavController) {
-//        otpCodeResponse.value = OtpCode(timeNow(), generateNumericOTP())
-//        MailSender.to(email).subject("Verify your account")
-//            .body("Your otp code is: ${otpCodeResponse.value!!.otpCode}")
-//            .success {
-//             nav.navigationTo(ClientScreen.EnterOtpCodeScreen.route)
-//                currentEmailVerify.value=email;
-//            }
-//            .fail {
-//                showToast(appContext.getString(R.string.send_code_faild))
-//            }.send()
+        otpCodeResponse.value = OtpCode(timeNow(), generateNumericOTP())
+        MailSender.to(email).subject("Verify your account")
+            .body("Your otp code is: ${otpCodeResponse.value!!.otpCode}")
+            .success {
+                nav.navigationTo(AccountScreen.EnterOtpCodeScreen.route)
+                currentEmailVerify.value = email;
+                otpCodeSend = otpCodeResponse.value
+            }
+            .fail {
+                showToast(appContext.getString(R.string.send_code_faild))
+            }.send()
     }
 
     fun updatePassword(value: String, function: (Int) -> Unit) {
@@ -696,5 +701,60 @@ class AppViewModel @Inject constructor() : ViewModel() {
             }
     }
 
+    fun resetPassword(value: String, function: () -> Unit) {
+        firestore.collection("$USERS")
+            .whereEqualTo("email", currentEmailVerify.value)
+            .get()
+            .addOnSuccessListener {
+                if (it.isEmpty) {
+                    showToast(appContext.getString(R.string.eror_during_update))
+                } else {
+                    pushNewNotification(
+                        title = appContext.getString(R.string.reset_password_success),
+                        senderId = it.documents.get(0).id,
+                        image = "https://cdn-icons-png.flaticon.com/512/13731/13731195.png",
+                        content = appContext.getString(R.string.reset_password_at_time)+ " ${timeNow()}",
+                        reciveId = it.documents.get(0).id,
+                        type = "RESET_PASSWORD",
+                        link = "",
+                        router = ""
+                    )
+                    it.documents.get(0).reference.update("password", value)
+                        .addOnSuccessListener {
+                            function.invoke()
+                            showToast(appContext.getString(R.string.reset_password_success))
+                        }
+                        .addOnFailureListener {
+                            showToast(it.message.toString())
+                        }
+                }
+            }
+
+
+    }
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -2,6 +2,7 @@ package dong.datn.tourify.app
 
 import android.content.Context
 import android.content.SharedPreferences
+import dong.datn.tourify.model.OtpCode
 import dong.duan.travelapp.model.Tour
 
 class SharedPreference {
@@ -92,6 +93,24 @@ var currentTheme: Int
 var isShowTrailer: Boolean
     get() = sharedPreferences.getBollean("showTrailer", true)
     set(value) = sharedPreferences.putBollean("showTrailer", value)
+
+var otpCodeSend: OtpCode?
+    get() {
+        val data = sharedPreferences.getString("otpCodeSend", "")
+        if (data != null) {
+            return if (data.isEmpty()) null else OtpCode().fromJson(data)
+        } else {
+            return null
+        }
+    }
+    set(value) {
+        if (value != null) {
+            sharedPreferences.putString("otpCodeSend", value.toJson())
+        } else {
+            sharedPreferences.putString("otpCodeSend", "")
+        }
+    }
+
 
 var lastChatTour: Tour?
     get() {

@@ -1,18 +1,17 @@
 package dong.datn.tourify.model
 
 import dong.datn.tourify.utils.timeNow
+import dong.duan.travelapp.model.BaseModel
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-class OtpCode {
+class OtpCode : BaseModel<OtpCode> {
 
     var timeCreate: String = timeNow()
     var otpCode = ""
 
-    constructor(otpCode: String) {
-        this.otpCode = otpCode
-    }
+    constructor()
 
     constructor(timeCreate: String, otpCode: String,) {
         this.timeCreate = timeCreate

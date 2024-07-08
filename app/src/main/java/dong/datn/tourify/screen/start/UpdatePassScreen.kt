@@ -1,6 +1,8 @@
 package dong.datn.tourify.screen.start
 
+import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,9 +11,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowLeft
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -20,33 +27,56 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
+import com.guru.fontawesomecomposelib.FaIcon
+import com.guru.fontawesomecomposelib.FaIcons
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
-import dong.datn.tourify.screen.client.ClientScreen
+import dong.datn.tourify.screen.client.MainActivity
 import dong.datn.tourify.ui.theme.appColor
+import dong.datn.tourify.ui.theme.findActivity
+import dong.datn.tourify.ui.theme.lawnGreen
+import dong.datn.tourify.ui.theme.lightGrey
+import dong.datn.tourify.ui.theme.red
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.utils.Space
-import dong.datn.tourify.utils.checkEmail
+import dong.datn.tourify.utils.checkPassword
 import dong.datn.tourify.widget.AppButton
 import dong.datn.tourify.widget.IconView
 import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.VerScrollView
 import dong.datn.tourify.widget.ViewParent
 import dong.datn.tourify.widget.navigationTo
+import dong.datn.tourify.widget.onClick
 import dong.duan.livechat.widget.InputValue
 
 @Composable
-fun ForgetPassScreen(nav: NavController, viewModel: AppViewModel) {
+fun ResetPassScreen(nav: NavController, viewModel: AppViewModel) {
    
+    val isShowDialog = remember {
+        mutableStateOf(false)
+    }
     val context = LocalContext.current
-    val email = remember {
+    val newPass = remember {
         mutableStateOf("")
     }
+    val reNewPass = remember {
+        mutableStateOf("")
+    }
+    val loadingState = remember {
+        mutableStateOf(2)
+    }
+    val checkingState = remember {
+        mutableStateOf(false)
+    }
     ViewParent(onBack = {
-        nav.navigationTo(ClientScreen.SettingScreen.route)
+        nav.navigationTo(AccountScreen.ResetPassWordScreen.route)
     }) {
         Column(Modifier.fillMaxSize()) {
             Row(
@@ -55,10 +85,7 @@ fun ForgetPassScreen(nav: NavController, viewModel: AppViewModel) {
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconView(modifier = Modifier, icon = Icons.Rounded.KeyboardArrowLeft) {
-                    nav.navigationTo(ClientScreen.SettingScreen.route)
-                }
-
+                Spacer(modifier = Modifier.width(50.dp))
                 TextView(
                     context.getString(R.string.forget_pass), Modifier.weight(1f), textSize = 20,
                     appColor, font = Font(R.font.poppins_semibold), textAlign = TextAlign.Center
@@ -76,40 +103,48 @@ fun ForgetPassScreen(nav: NavController, viewModel: AppViewModel) {
             VerScrollView(Modifier.padding(horizontal = 16.dp)) {
                 Column(Modifier.fillMaxSize()) {
                     TextView(
-                        text = context.getString(R.string.title_foget_pass),
+                        text = context.getString(R.string.enter_new_pass),
                         modifier = Modifier,
                         font = Font(R.font.poppins_medium),
                         color = textColor(),
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Start
                     )
-
-                    Space(h = 12)
-
-                    InputValue(value = email.value, hint = context.getString(R.string.email)) {
-                        email.value = it
+                    Space(h = 6)
+                    InputValue(value = newPass.value) {
+                        newPass.value = it
+                        checkingState.value = if(reNewPass.value!="" && newPass.value!="" && (reNewPass.value== newPass.value)) true else false
+                    }
+                    TextView(
+                        text = context.getString(R.string.enter_pass_again),
+                        modifier = Modifier,
+                        font = Font(R.font.poppins_medium),
+                        color = textColor(),
+                        textAlign = TextAlign.Start
+                    )
+                    Space(h = 6)
+                    InputValue(value = reNewPass.value) {
+                        reNewPass.value = it
+                        checkingState.value = if(reNewPass.value!="" && newPass.value!="" && (reNewPass.value== newPass.value)) true else false
                     }
 
-                    Spacer(modifier =Modifier.height(12.dp))
+
+                    Spacer(modifier = Modifier.height(12.dp))
                     AppButton(
-                        text = context.getString(R.string.continues),
+                        text = context.getString(R.string.update),
                         modifier = Modifier,
-                        isEnable = checkEmail(email.value)
+                        loadingState.value,
+                        isEnable = checkingState.value
                     ) {
-                        viewModel.sendVerificationEmail(email.value,nav)
+                        loadingState.value = 0
+                        viewModel.resetPassword(newPass.value) {
+                            nav.navigationTo(AccountScreen.SignInScreen.route)
+                        }
                     }
                 }
             }
         }
     }
 }
-
-
-
-
-
-
-
-
 
 
 

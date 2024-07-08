@@ -66,10 +66,6 @@ class SplashActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        Firestore.getListData<Tour>(Firebase.firestore.collection("$TOUR")) {
-            viewModel.listTour.value = it ?: mutableListOf()
-        }
         if (authSignIn != null) {
             Firestore.fetchById<Users>(
                 Firebase.firestore.collection(USERS).document(authSignIn!!.UId)
