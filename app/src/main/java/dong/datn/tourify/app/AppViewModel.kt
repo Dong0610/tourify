@@ -93,10 +93,25 @@ class AppViewModel @Inject constructor() : ViewModel() {
     val storage = Firebase.storage
 
     val bookingTourNow = mutableStateOf<Tour?>(null)
+    val tourTimeSelected = mutableStateOf(
+        TourTime(
+            timeID = "0",
+            "3 ngày hai đêm",
+            "09:00 02/06/2024",
+            "12:00 05/06/2024",
+            1
+        ),
+    )
+    val countChild =
+        mutableStateOf(0)
+    val countAdult =
+        mutableStateOf(0)
+    val totalPrice =
+        mutableStateOf(0.0)
 
-    fun fogetPassword(text: String) {
+    val percentChidl = mutableStateOf(0.8f)
 
-    }
+
     var listChatCurrent: MutableState<MutableList<Chat>> = mutableStateOf(mutableListOf())
     private var childEventListenerCurrentChat: ChildEventListener? = null
     val lastTourIdByChat = mutableStateOf("")

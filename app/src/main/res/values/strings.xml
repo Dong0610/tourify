@@ -170,4 +170,12 @@
     <string name="number">Number</string>
     <string name="count">Count</string>
     <string name="price">Price</string>
+    <string name="bill_include">Services include: moving, serving, and hotel rooms</string>
+    <string name="bill_include_other">Other services: guides, insurance and environmental fees</string>
+    <string name="bill_un_include">TIP, VAT and fee incurred outside the program</string>
+    <string name="not_incluted">Not included</string>
+    <string name="deposit">Deposit</string>
+    <string name="pre_payment">Prepayment</string>
+    <string name="customer_name">Customer name</string>
+    <string name="artist">Artist</string>
 </resources>

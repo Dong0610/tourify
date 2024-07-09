@@ -93,20 +93,10 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
     val isShowDialog = remember {
         mutableStateOf(false)
     }
-
-    val countChild = remember {
-        mutableStateOf(0)
-    }
-    val countAdutl = remember {
-        mutableStateOf(0)
-    }
-
     val tourTimeService = remember {
         mutableStateOf<String>("")
     }
-    val totalPrice = remember {
-        mutableStateOf(0.0)
-    }
+
     if (tour.value != null) {
         RealTime.fetchById<String>("$SERVICE/${tour.value?.tourID}/time") {
             tourTimeService.value = it.toString()
@@ -227,10 +217,10 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                         name = context.getString(R.string.adult),
                         price = tour.value!!.salePrice
                     ) {
-                        countAdutl.value = it
-                        totalPrice.value =
-                            (tour.value!!.salePrice * countAdutl.value) + (tour.value!!.salePrice!! * 0.75f * countChild.value)
-                        if (totalPrice.value == 0.0 || it == 0) {
+                        viewModels.countAdult.value = it
+                        viewModels.totalPrice.value =
+                            (tour.value!!.salePrice * viewModels.countAdult.value) + (tour.value!!.salePrice * 0.75f * viewModels.countChild.value)
+                        if (viewModels.totalPrice.value == 0.0 || it == 0) {
                             isDisable.value = true
                         } else {
                             isDisable.value = false
@@ -239,12 +229,12 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                     Spacer(modifier = Modifier.height(12.dp))
                     ArrowValue(
                         name = context.getString(R.string.child),
-                        price = tour.value!!.salePrice!! * 0.75
+                        price = tour.value!!.salePrice * 0.75
                     ) {
-                        countChild.value = it
-                        totalPrice.value =
-                            (tour.value!!.salePrice!! * countAdutl.value) + (tour.value!!.salePrice!! * 0.75f * countChild.value)
-                        if (totalPrice.value == 0.0 || countAdutl.value == 0) {
+                        viewModels.countChild.value = it
+                        viewModels.totalPrice.value =
+                            (tour.value!!.salePrice * viewModels.countAdult.value) + (tour.value!!.salePrice * 0.75f * viewModels.countChild.value)
+                        if (viewModels.totalPrice.value == 0.0 || viewModels.countAdult.value == 0) {
                             isDisable.value = true
                         } else {
                             isDisable.value = false
@@ -290,7 +280,7 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                     font = Font(R.font.poppins_semibold),
                 )
                 TextView(
-                    text = totalPrice.value.toCurrency(),
+                    text = viewModels.totalPrice.value.toCurrency(),
                     modifier = Modifier,
                     color = if (currentTheme == 1) red else white,
                     font = Font(R.font.poppins_semibold)
@@ -308,7 +298,7 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
         }
     }
     if (isShowDialog.value) {
-        CustomDialog(totalPrice.value, {
+        CustomDialog(viewModels.totalPrice.value, {
             isShowDialog.value = false
         }, {
                 
