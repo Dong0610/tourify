@@ -2,13 +2,18 @@ package dong.datn.tourify.screen.client
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
 import android.os.Bundle
+import android.os.StrictMode
+import android.os.StrictMode.ThreadPolicy
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -58,6 +63,7 @@ import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.app.isShowTrailer
 import dong.datn.tourify.app.viewModels
 import dong.datn.tourify.firebase.Firestore
+import dong.datn.tourify.merchant.api.CreateOrder
 import dong.datn.tourify.screen.view.BillBooking
 import dong.datn.tourify.ui.theme.TourifyTheme
 import dong.datn.tourify.ui.theme.black
@@ -72,9 +78,15 @@ import dong.datn.tourify.widget.RoundedImage
 import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.animComposable
 import dong.datn.tourify.widget.onClick
+import dong.duan.ecommerce.library.showToast
 import dong.duan.travelapp.model.Tour
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.json.JSONObject
+import vn.zalopay.sdk.Environment
+import vn.zalopay.sdk.ZaloPayError
+import vn.zalopay.sdk.ZaloPaySDK
+import vn.zalopay.sdk.listeners.PayOrderListener
 import java.io.IOException
 import java.util.Locale
 
@@ -127,6 +139,89 @@ open class MainActivity : ComponentActivity() {
         return null
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        ZaloPaySDK.getInstance().onResult(intent)
+    }
+
+    fun payment(totalPrice:String){
+        val orderApi = CreateOrder()
+        showToast("Create order")
+        val token = mutableStateOf("")
+        try {
+            val data: JSONObject = orderApi.createOrder(totalPrice)
+            val code = data.getString("returncode")
+            Toast.makeText(applicationContext, "return_code: $code", Toast.LENGTH_LONG).show()
+            if (code == "1") {
+                token.value=(data.getString("zptranstoken"))
+            }
+            token.value = data.getString("zptranstoken")
+        } catch (e: Exception) {
+            showToast("Error: "+e.message.toString())
+            e.printStackTrace()
+        }
+        if(token.value!=""){
+            showToast(token.value)
+            ZaloPaySDK.getInstance()
+                .payOrder(this@MainActivity, token.value, "demode://app", object : PayOrderListener {
+                    override fun onPaymentSucceeded(
+                        transactionId: String?,
+                        transToken: String?,
+                        appTransID: String?
+                    ) {
+                        runOnUiThread {
+                            AlertDialog.Builder(this@MainActivity)
+                                .setTitle("Payment Success")
+                                .setMessage(
+                                    String.format(
+                                        "TransactionId: %s - TransToken: %s",
+                                        transactionId,
+                                        transToken
+                                    )
+                                )
+                                .setPositiveButton(
+                                    "OK"
+                                ) { dialog, which -> }
+                                .setNegativeButton("Cancel", null).show()
+                        }
+
+                    }
+
+                    override fun onPaymentCanceled(zpTransToken: String?, appTransID: String?) {
+                        AlertDialog.Builder(this@MainActivity)
+                            .setTitle("User Cancel Payment")
+                            .setMessage(String.format("zpTransToken: %s \n", zpTransToken))
+                            .setPositiveButton(
+                                "OK"
+                            ) { dialog, which -> }
+                            .setNegativeButton("Cancel", null).show()
+                    }
+
+                    override fun onPaymentError(
+                        zaloPayError: ZaloPayError,
+                        zpTransToken: String?,
+                        appTransID: String?
+                    ) {
+                        AlertDialog.Builder(this@MainActivity)
+                            .setTitle("Payment Fail")
+                            .setMessage(
+                                java.lang.String.format(
+                                    "ZaloPayErrorCode: %s \nTransToken: %s",
+                                    zaloPayError.toString(),
+                                    zpTransToken
+                                )
+                            )
+                            .setPositiveButton(
+                                "OK"
+                            ) { dialog, which -> }
+                            .setNegativeButton("Cancel", null).show()
+                    }
+                })
+        }
+
+
+    }
+
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -137,6 +232,12 @@ open class MainActivity : ComponentActivity() {
             )
         )
 
+        val policy = ThreadPolicy.Builder().permitAll().build()
+        StrictMode.setThreadPolicy(policy)
+
+        ZaloPaySDK.init(553,Environment.SANDBOX );
+
+       // payment("1000")
         changeTheme(currentTheme,applicationContext)
         setContent {
             LaunchedEffect(key1 = " listNotifications.value.size") {
@@ -174,6 +275,7 @@ open class MainActivity : ComponentActivity() {
             }
             TourifyTheme {
                 MainNavigation(country)
+
 
             }
             if (isShowTrailer) {
@@ -315,7 +417,7 @@ open class MainActivity : ComponentActivity() {
                 NavHost(
                     modifier = Modifier.padding(insertPadding),
                     navController = navController,
-                    startDestination = ClientScreen.BillBooking.route
+                    startDestination = ClientScreen.HomeClientScreen.route
                 ) {
                     animComposable("home_client") {
                         LaunchedEffect(Unit) {

@@ -97,6 +97,7 @@ fun InputValue(
     value: String,
     hint: String = "",
     maxLines: Int=1,
+    font: Font = Font(R.font.poppins_medium),
     textSize: TextUnit =16.sp,
     keyboardType: KeyboardType = KeyboardType.Text,
     onValueChange: (String) -> Unit
@@ -122,7 +123,7 @@ fun InputValue(
             textStyle = TextStyle(
                 color = textColor(context),
                 fontSize = textSize,
-                fontFamily = FontFamily(Font(R.font.poppins_medium))
+                fontFamily = FontFamily(font)
             ),
             maxLines = maxLines,
             keyboardOptions = KeyboardOptions.Default.copy(
@@ -140,7 +141,7 @@ fun InputValue(
                             style = TextStyle(
                                 color = darkGray,
                                 fontSize = textSize,
-                                fontFamily = FontFamily(Font(R.font.poppins_regular))
+                                fontFamily = FontFamily(font)
                             )
                         )
                     }
@@ -155,6 +156,7 @@ fun InputValue(
 fun InputValue(
     value: String,
     hint: String = "",
+    font: Font = Font(R.font.poppins_medium),
     modifier: Modifier=Modifier,
     maxLines: Int=1,
     teAlignment: TextAlign= TextAlign.Center,
@@ -177,7 +179,6 @@ fun InputValue(
         BasicTextField(
             value = value,
             onValueChange = { onValueChange(it) },
-
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 8.dp)
@@ -186,7 +187,7 @@ fun InputValue(
                 color = textColor(context),
                 fontSize = textSize,
                 textAlign = teAlignment,
-                fontFamily = FontFamily(Font(R.font.poppins_medium))
+                fontFamily = FontFamily(font)
             ),
             maxLines = maxLines,
             keyboardOptions = KeyboardOptions.Default.copy(
@@ -204,7 +205,7 @@ fun InputValue(
                             style = TextStyle(
                                 color = darkGray,
                                 fontSize = textSize,
-                                fontFamily = FontFamily(Font(R.font.poppins_regular))
+                                fontFamily = FontFamily(font)
                             )
                         )
                     }

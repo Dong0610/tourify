@@ -10,8 +10,6 @@ data class PaymentMethod(
     val image: Any
 )
 
-data class UserPayment(var count: Int = 0, var Price: Double = 0.0)
-
 enum class OrderStatus {
     PENDING,
     PAID,
@@ -20,15 +18,17 @@ enum class OrderStatus {
 
 class Order(
     var orderID: String =  "",
-    var userOrder: String =  "",
+    var userOrderId: String = "",
     var tourName: String =  "",
     var tourTime: TourTime= TourTime(),
     var tourID: String =  "",
     var orderDate: String =  "",
-    var totalPrice: Double =  0.0,
+    var price: Double =  0.0,
+    var saleId: String = "",
+    var staffConfirmId: String = "",
     var note: String =  "",
-    var adultPayment: UserPayment =  UserPayment(),
-    var childPayment: UserPayment =  UserPayment(),
+    var adultCount: Int = 0,
+    var childCount: Int = 0,
     var paymentMethod: PaymentMethod =  PaymentMethod(),
     var orderStatus: OrderStatus =  OrderStatus.PENDING,
     var cancelReason: String =  "",

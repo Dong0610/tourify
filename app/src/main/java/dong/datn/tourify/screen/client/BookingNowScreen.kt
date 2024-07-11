@@ -75,6 +75,7 @@ import dong.datn.tourify.widget.navigationTo
 import dong.datn.tourify.widget.onClick
 import dong.duan.livechat.widget.InputValue
 import dong.duan.travelapp.model.Tour
+import dong.duan.travelapp.model.TourTime
 
 @Composable
 fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
@@ -82,7 +83,7 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
     
 
     val tour = remember {
-        mutableStateOf(viewModels?.bookingTourNow?.value)
+        mutableStateOf(viewModels.bookingTourNow.value)
     }
     val notes = remember {
         mutableStateOf<String>("")
@@ -209,7 +210,7 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                     DropdownSelectTime(
                         tour = tour.value!!, modifier = Modifier.fillMaxWidth()
                     ) {
-
+                        viewModels.tourTimeSelected.value = it
                     }
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -259,6 +260,7 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                             value = notes.value,
                             modifier = Modifier.fillMaxWidth(),
                             hint = context.getString(R.string.notes) + "...",
+                            font = Font(R.font.poppins_regular),
                             teAlignment = TextAlign.Start,
                             maxLines = 100
 
@@ -272,7 +274,7 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
             Row(
                 Modifier
                     .fillMaxWidth(1f)
-                    .padding(horizontal = 16.dp), horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(horizontal = 18.dp), horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 TextView(
                     text = context.getString(R.string.total_price),
@@ -286,7 +288,7 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                     font = Font(R.font.poppins_semibold)
                 )
             }
-            Space(h = 6)
+            Space(h = 12)
             AppButton(
                 isEnable = !isDisable.value,
                 text = context.getString(R.string.confirm),
@@ -301,7 +303,13 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
         CustomDialog(viewModels.totalPrice.value, {
             isShowDialog.value = false
         }, {
-                
+            viewModels.creteOrderByTour(
+                tour.value!!,
+                notes.value,
+                viewModels.tourTimeSelected.value
+            ) {
+
+            }
         })
     }
 
@@ -467,8 +475,7 @@ fun ArrowValue(name: String, price: Double, max: Int = 10, onTouch: (Int) -> Uni
 @Composable
 fun DropdownSelectTime(
     tour: Tour, modifier: Modifier, calback: (
-        Tour
-
+        TourTime
     ) -> Unit
 ) {
     val context = LocalContext.current
@@ -527,7 +534,7 @@ fun DropdownSelectTime(
                             onclick = {
                                 expanded.value = false
                                 selectedText.value = item
-                                calback.invoke(tour)
+                                calback.invoke(item)
                             },
                             text = context.getString(R.string.from) + item.startTime + " " + context.getString(
                                 R.string.to
@@ -537,7 +544,7 @@ fun DropdownSelectTime(
                     }, onClick = {
                         selectedText.value = item
                         expanded.value = false
-                        calback.invoke(tour)
+                        calback.invoke(item)
                     })
                 }
             }

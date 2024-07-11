@@ -30,6 +30,8 @@ import dong.datn.tourify.model.Chat
 import dong.datn.tourify.model.ChatType
 import dong.datn.tourify.model.ConversionChat
 import dong.datn.tourify.model.Notification
+import dong.datn.tourify.model.Order
+import dong.datn.tourify.model.OrderStatus
 import dong.datn.tourify.model.OtpCode
 import dong.datn.tourify.model.Places
 import dong.datn.tourify.screen.client.ClientScreen
@@ -39,6 +41,7 @@ import dong.datn.tourify.utils.CONVERSION
 import dong.datn.tourify.utils.LOVE
 import dong.datn.tourify.utils.MailSender
 import dong.datn.tourify.utils.NOTIFICATION
+import dong.datn.tourify.utils.ORDER
 import dong.datn.tourify.utils.SCHEDULE
 import dong.datn.tourify.utils.SERVICE
 import dong.datn.tourify.utils.TOUR
@@ -48,6 +51,7 @@ import dong.datn.tourify.widget.navigationTo
 import dong.duan.ecommerce.library.showToast
 import dong.duan.livechat.utility.generateNumericOTP
 import dong.duan.livechat.utility.toJson
+import dong.duan.travelapp.model.PaymentMethod
 import dong.duan.travelapp.model.Schedule
 import dong.duan.travelapp.model.Service
 import dong.duan.travelapp.model.Tour
@@ -746,6 +750,40 @@ class AppViewModel @Inject constructor() : ViewModel() {
             }
 
 
+    }
+
+    fun creteOrderByTour(tour: Tour, note: String, tourTime: TourTime, function: () -> Unit) {
+
+
+        var order = Order(
+            orderID = "",
+            userOrderId = authSignIn!!.UId,
+            tourName = tour.tourName,
+            tourTime = tourTime,
+            tourID = tour.tourID,
+            orderDate = timeNow(),
+            price =  totalPrice.value,
+            saleId = "",
+            staffConfirmId = "",
+            note = note,
+            adultCount = countAdult.value,
+            childCount = countChild.value,
+            paymentMethod = PaymentMethod(),
+            orderStatus = OrderStatus.PENDING,
+            cancelReason = "",
+            cancelDate = "",
+            cancelBefore = "",
+        )
+
+        Firestore.pushAsync<Order>("$ORDER")
+            .withId {
+                order.orderID=it
+            }
+            .set(order)
+            .finish {  }
+            .error {
+                showToast(it)
+            }.execute()
     }
 
 }
