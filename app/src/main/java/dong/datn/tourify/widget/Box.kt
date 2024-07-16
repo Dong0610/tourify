@@ -75,6 +75,7 @@ import dong.datn.tourify.ui.theme.lightGrey
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.white
 import dong.datn.tourify.ui.theme.whiteSmoke
+import dong.datn.tourify.utils.opacity
 import kotlinx.coroutines.launch
 
 @Composable
@@ -340,7 +341,7 @@ fun IconView(
 @Composable
 fun TextView(
     text: String,
-    modifier: Modifier,
+    modifier: Modifier= Modifier,
     textSize: Int = 16,
     color: Color? = null,
     font: Font? = null,
@@ -369,6 +370,7 @@ fun TextView(
         }
     )
 }
+
 
 @Composable
 fun TextView(
@@ -484,7 +486,6 @@ fun AppButton(
                     if (isLoading.value != null) {
                         isLoading.value = 0
                     }
-
                     onClick.invoke()
                 }
 
@@ -503,6 +504,37 @@ fun ButtonNext(text: String, modifier: Modifier,onClick: () -> Unit) {
                 brush = Brush.horizontalGradient(
                     colors = listOf(
                         Color(0xFF02FF9A), Color(0xFF0622BD)
+                    )
+                ), shape = RoundedCornerShape(12.dp)
+            )
+            .padding(vertical = 12.dp)
+            .onClick {
+                onClick.invoke()
+            },
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = text,
+            fontSize = 16.sp,
+            color = Color.White,
+            fontFamily = FontFamily(Font(R.font.poppins_bold)),
+            modifier = Modifier.padding(horizontal = 16.dp),
+            textAlign = TextAlign.Center
+        )
+
+    }
+}
+
+@Composable
+fun ButtonNext2(text: String, modifier: Modifier,onClick: () -> Unit) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(
+                        Color(0xFF02FF9A).opacity(0.75f), Color(0xFF0622BD).opacity(0.75f)
                     )
                 ), shape = RoundedCornerShape(12.dp)
             )

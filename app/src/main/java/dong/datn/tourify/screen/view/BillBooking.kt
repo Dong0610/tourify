@@ -1,6 +1,14 @@
 package dong.datn.tourify.screen.view
 
 
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Picture
+import android.media.MediaScannerConnection
+import android.net.Uri
+import android.os.Environment
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -17,38 +25,207 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.drawscope.draw
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
+import androidx.navigation.NavController
 import dong.datn.tourify.R
+import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.app.authSignIn
+import dong.datn.tourify.app.percentDeposit
 import dong.datn.tourify.app.viewModels
+import dong.datn.tourify.firebase.Firestore
+import dong.datn.tourify.firebase.RealTime
+import dong.datn.tourify.firebase.putImgToStorage
+import dong.datn.tourify.screen.client.ClientScreen
 import dong.datn.tourify.ui.theme.black
-import dong.datn.tourify.ui.theme.darkBlue
-import dong.datn.tourify.ui.theme.red
 import dong.datn.tourify.ui.theme.white
+import dong.datn.tourify.utils.CallbackType
+import dong.datn.tourify.utils.NOTIFICATION
+import dong.datn.tourify.utils.ORDER
 import dong.datn.tourify.utils.SpaceH
+import dong.datn.tourify.utils.delay
 import dong.datn.tourify.utils.timeNow
 import dong.datn.tourify.utils.toCurrency
 import dong.datn.tourify.utils.widthPercent
+import dong.datn.tourify.widget.ButtonNext2
+import dong.datn.tourify.widget.IconView2
 import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.ViewParentContent
-import dong.duan.travelapp.model.TourTime
+import dong.datn.tourify.widget.navigationTo
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import java.io.File
+import kotlin.coroutines.resume
+
 
 @Composable
-fun BillBooking(navController: NavHostController) {
+fun CreateInvoiceOrder(nav: NavController, viewModels: AppViewModel) {
+    val context = LocalContext.current
 
-    viewModels.currentTourTime.value = TourTime("tour", "TEST", timeNow(), timeNow(), -1)
-    if (viewModels.listTour.value.size != 0) {
-        viewModels.bookingTourNow.value = viewModels.listTour.value.get(0)
+    val salePrice = remember {
+        mutableStateOf(dong.datn.tourify.app.viewModels.salePrice.value)
+    }
+    val coroutineScope = rememberCoroutineScope()
+    val picture = remember { Picture() }
+    val tour = remember {
+        mutableStateOf(viewModels.bookingTourNow.value)
     }
 
+    fun createUriFromView(callback: (String) -> Unit) {
+        coroutineScope.launch(Dispatchers.IO) {
+            val bitmap = createBitmapFromPicture(picture)
+            val uri = bitmap.saveToDisk(context)
+            viewModels.storage.getReference("INVOICE")
+                .putImgToStorage(context, uri) {
+                    callback(it.toString())
+                }
+        }
+    }
+    ViewParentContent(onBack = {
+        nav.popBackStack()
+    }) {
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .drawWithCache {
+                    val width = this.size.width.toInt()
+                    val height = this.size.height.toInt()
+                    onDrawWithContent {
+                        val pictureCanvas =
+                            androidx.compose.ui.graphics.Canvas(
+                                picture.beginRecording(width, height)
+                            )
+                        draw(this, this.layoutDirection, pictureCanvas, this.size) {
+                            this@onDrawWithContent.drawContent()
+                        }
+                        picture.endRecording()
+                        drawIntoCanvas { canvas -> canvas.nativeCanvas.drawPicture(picture) }
+                    }
+                }
+        ) {
+            BillBooking(salePrice)
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding( 12.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            IconView2(modifier = Modifier, icon = Icons.Rounded.KeyboardArrowLeft) {
+                nav.popBackStack()
+            }
+
+            Modifier.weight(1f)
+
+            ButtonNext2(
+                text = context.getString(R.string.continues),
+                modifier = Modifier.wrapContentHeight()
+            ) {
+                viewModels.loadingState.value = true
+                viewModels.creteOrderByTour(
+                    tour.value!!, viewModels.notes.value, salePrice.value,
+                    viewModels.tourTimeSelected.value
+                ) { it, id, notiId ->
+                    if (it == CallbackType.SUCCESS) {
+                        createUriFromView { url ->
+                            Firestore.updateAsync("$ORDER/$id", hashMapOf<String, Any>().apply {
+                                put("invoiceUrl", url)
+                            })
+
+                            RealTime.udapte(
+                                "$NOTIFICATION/${authSignIn!!.UId}/${notiId.notiId}",notiId.apply {
+                                    link= url
+                                },
+                                {},
+                                {})
+                        }
+                        delay(1500) {
+                            nav.navigationTo(ClientScreen.BookingScreen.route)
+                            viewModels.loadingState.value = false
+                        }
+                    } else if (it == CallbackType.INFO) {
+                        viewModels.loadingState.value = false
+                    }
+                }
+            }
+        }
+    }
+
+}
+
+private fun createBitmapFromPicture(picture: Picture): Bitmap {
+    val bitmap = Bitmap.createBitmap(
+        picture.width,
+        picture.height,
+        Bitmap.Config.ARGB_8888
+    )
+
+    val canvas = Canvas(bitmap)
+    canvas.drawColor(android.graphics.Color.WHITE)
+    canvas.drawPicture(picture)
+    return bitmap
+}
+
+private suspend fun Bitmap.saveToDisk(context: Context): Uri {
+    val file = File(
+        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
+        "screenshot-${System.currentTimeMillis()}.png"
+    )
+
+    file.writeBitmap(this, Bitmap.CompressFormat.PNG, 100)
+    Log.d("TAG", "${file.absoluteFile}")
+    return scanFilePath(context, file.path) ?: throw Exception("File could not be saved")
+}
+
+private suspend fun scanFilePath(context: Context, filePath: String): Uri? {
+    return suspendCancellableCoroutine { continuation ->
+        MediaScannerConnection.scanFile(
+            context,
+            arrayOf(filePath),
+            arrayOf("image/png")
+        ) { _, scannedUri ->
+            if (scannedUri == null) {
+                continuation.cancel(Exception("File $filePath could not be scanned"))
+            } else {
+                continuation.resume(scannedUri)
+            }
+        }
+    }
+}
+
+private fun File.writeBitmap(bitmap: Bitmap, format: Bitmap.CompressFormat, quality: Int) {
+    outputStream().use { out ->
+        bitmap.compress(format, quality, out)
+        out.flush()
+    }
+}
+
+@Composable
+fun BillBooking(salePrice: MutableState<Double>) {
+    val adultPrice = remember {
+        mutableStateOf(salePrice.value * viewModels.countAdult.value)
+    }
+    val childPrice = remember {
+        mutableStateOf(salePrice.value * 0.75f * viewModels.countChild.value)
+    }
     val context = LocalContext.current
     ViewParentContent(
         onBack = {}, modifier = Modifier
@@ -377,7 +554,7 @@ fun BillBooking(navController: NavHostController) {
                             .weight(3f)
                             .wrapContentHeight()) {
                         TextView(
-                            text = viewModels.detailTour.value?.tourPrice?.toCurrency() ?: "0",
+                            text = salePrice.value.toCurrency(),
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center,
                             textSize = 11,
@@ -395,7 +572,7 @@ fun BillBooking(navController: NavHostController) {
                             .weight(3f)
                             .wrapContentHeight()) {
                         TextView(
-                            text = "${((viewModels.detailTour.value?.tourPrice) ?: 0).toInt() * viewModels.countAdult.value}",
+                            text = adultPrice.value.toCurrency(),
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center,
                             textSize = 11,
@@ -422,7 +599,7 @@ fun BillBooking(navController: NavHostController) {
                             .weight(2f)
                             .wrapContentHeight()) {
                         TextView(
-                            text = "1",
+                            text = "2",
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center,
                             textSize = 11,
@@ -440,7 +617,7 @@ fun BillBooking(navController: NavHostController) {
                             .weight(4f)
                             .wrapContentHeight()) {
                         TextView(
-                            text = context.getString(R.string.adult),
+                            text = context.getString(R.string.child),
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center,
                             textSize = 11,
@@ -458,7 +635,7 @@ fun BillBooking(navController: NavHostController) {
                             .weight(2f)
                             .wrapContentHeight()) {
                         TextView(
-                            text = viewModels.countAdult.value.toString(),
+                            text = viewModels.countChild.value.toString(),
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center,
                             textSize = 11,
@@ -476,7 +653,7 @@ fun BillBooking(navController: NavHostController) {
                             .weight(3f)
                             .wrapContentHeight()) {
                         TextView(
-                            text = viewModels.detailTour.value?.tourPrice?.toCurrency() ?: "0",
+                            text = (salePrice.value * 0.75f).toCurrency(),
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center,
                             textSize = 11,
@@ -494,7 +671,7 @@ fun BillBooking(navController: NavHostController) {
                             .weight(3f)
                             .wrapContentHeight()) {
                         TextView(
-                            text = "${((viewModels.detailTour.value?.tourPrice) ?: 0).toInt() * viewModels.countAdult.value}",
+                            text = childPrice.value.toCurrency(),
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center,
                             textSize = 11,
@@ -597,7 +774,7 @@ fun BillBooking(navController: NavHostController) {
                             .wrapContentHeight()
                     ) {
                         TextView(
-                            text = "${((viewModels.detailTour.value?.tourPrice) ?: 0).toInt() * viewModels.countAdult.value}",
+                            text = (adultPrice.value + childPrice.value).toCurrency(),
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center,
                             textSize = 11,
@@ -646,7 +823,7 @@ fun BillBooking(navController: NavHostController) {
                             .wrapContentHeight()
                     ) {
                         TextView(
-                            text = "${((viewModels.detailTour.value?.tourPrice) ?: 0).toInt() * viewModels.countAdult.value}",
+                            text = ((adultPrice.value + childPrice.value) * percentDeposit).toCurrency(),
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center,
                             textSize = 11,
@@ -695,7 +872,7 @@ fun BillBooking(navController: NavHostController) {
                             .wrapContentHeight()
                     ) {
                         TextView(
-                            text = "${((viewModels.detailTour.value?.tourPrice) ?: 0).toInt() * viewModels.countAdult.value}",
+                            text = ((childPrice.value + adultPrice.value) - ((adultPrice.value + childPrice.value) * percentDeposit)).toCurrency(),
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center,
                             textSize = 11,

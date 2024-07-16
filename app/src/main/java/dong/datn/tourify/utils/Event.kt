@@ -2,6 +2,8 @@ package dong.duan.livechat.utility
 
 import android.os.Handler
 import android.os.Looper
+import kotlin.math.pow
+import kotlin.math.round
 import kotlin.random.Random
 
 open class Event<out T>(val content:T) {
@@ -28,4 +30,14 @@ fun generateNumericOTP(length: Int = 4): String {
         otp.append(randomDigit)
     }
     return otp.toString()
+}
+
+fun Double.formats(round: Int=1): Double {
+    val scale = 10.0.pow(round)
+    return round(this * scale) / scale
+}
+
+fun Float.formats(round: Int=1): Double {
+    val scale = 10.0.pow(round)
+    return round(this * scale) / scale
 }

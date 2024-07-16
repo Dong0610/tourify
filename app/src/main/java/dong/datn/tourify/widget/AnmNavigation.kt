@@ -80,7 +80,7 @@ fun NavController.navigationTo(route: String) {
 fun NavController.navigationTo(route: String,backScreen:String?=null) {
     this.navigate(route) {
         if(backScreen != null){
-            viewModels?.prevScreen!!.value = backScreen
+            viewModels.prevScreen.value = backScreen
         }
         graph.startDestinationRoute?.let { route ->
             popUpTo(route) { saveState = true }

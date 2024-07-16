@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.PagerState
 import com.google.accompanist.pager.rememberPagerState
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
@@ -51,7 +52,10 @@ import dong.datn.tourify.app.authSignIn
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.app.database
 import dong.datn.tourify.app.viewModels
+import dong.datn.tourify.firebase.Firestore
 import dong.datn.tourify.model.Places
+import dong.datn.tourify.model.Vehicle
+import dong.datn.tourify.model.getNewVehicle
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.black
 import dong.datn.tourify.ui.theme.darkGray
@@ -64,6 +68,7 @@ import dong.datn.tourify.ui.theme.transparent
 import dong.datn.tourify.ui.theme.white
 import dong.datn.tourify.utils.CommonImage
 import dong.datn.tourify.utils.heightPercent
+import dong.datn.tourify.utils.toCurrency
 import dong.datn.tourify.utils.widthPercent
 import dong.datn.tourify.widget.DotIndicator
 import dong.datn.tourify.widget.InnerImageIcon
@@ -88,24 +93,26 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
     val listPlaces = remember {
         mutableStateOf<MutableList<Places>?>(null)
     }
+    var pagerState: PagerState? = null
     val coroutineScope = rememberCoroutineScope()
-    val listImage =
-        listOf(R.drawable.img_sale_1, R.drawable.img_sale_2, R.drawable.img_sale_3, R.drawable.img_sale_4,R.drawable.img_sale_5)
-    val pagerState = rememberPagerState(
-        pageCount = listImage.size,
-        initialOffscreenLimit = 2,
-        infiniteLoop = true,
-        initialPage = 0,
-    )
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(3000) // Delay for 3 seconds
-            coroutineScope.launch {
-                val nextPage = (pagerState.currentPage + 1) % listImage.size
-                pagerState.animateScrollToPage(nextPage)
+    if (viewModel.listSale.value.size != 0) {
+        pagerState = rememberPagerState(
+            pageCount = viewModel.listSale.value.size,
+            initialOffscreenLimit = 2,
+            infiniteLoop = true,
+            initialPage = 0,
+        )
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(3000) // Delay for 3 seconds
+                coroutineScope.launch {
+                    val nextPage = (pagerState.currentPage + 1) % viewModel.listSale.value.size
+                    pagerState.animateScrollToPage(nextPage)
+                }
             }
         }
     }
+
 
     val indexSlideImage = remember {
         mutableStateOf(1)
@@ -181,24 +188,30 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
                         })
                     }
                     Spacer(modifier = Modifier.height(12.dp))
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                    ) {
+                    if (viewModel.listSale.value.size > 0) {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                        ) {
 
-                        HorizontalPager(modifier = Modifier, state = pagerState) { page ->
-                            RoundedImage(
-                                listImage.get(page),
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.heightPercent(28f),
-                                shape = RoundedCornerShape(6.dp)
-                            )
-                            indexSlideImage.value = page
+                            HorizontalPager(
+                                modifier = Modifier,
+                                state = pagerState as PagerState
+                            ) { page ->
+                                RoundedImage(
+                                    viewModel.listSale.value[page].saleImage,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.heightPercent(28f),
+                                    shape = RoundedCornerShape(6.dp)
+                                )
+                                indexSlideImage.value = page
+                            }
                         }
-                    }
-                    Row(Modifier.fillMaxWidth(1f), horizontalArrangement = Arrangement.Center) {
-                        DotIndicator(pagerState)
+                        Row(Modifier.fillMaxWidth(1f), horizontalArrangement = Arrangement.Center) {
+                            DotIndicator(pagerState!!)
+                        }
+
                     }
 
                     Row(
@@ -208,26 +221,16 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
                         horizontalArrangement = Arrangement.Center
                     ) {
                         ItemCategory(
-                            Modifier.weight(0.3f),
-                            content = context.getString(R.string.str_ct_plane),
-                            icon = R.drawable.ic_round_airplane
+                            getNewVehicle(context).get(0), Modifier.weight(0.3f)
                         ) {
 
                         }
                         Spacer(modifier = Modifier.width(12.dp))
-                        ItemCategory(
-                            Modifier.weight(0.3f),
-                            content = context.getString(R.string.str_ct_car),
-                            icon = R.drawable.ic_round_directions_car
-                        ) {
+                        ItemCategory(getNewVehicle(context).get(1), Modifier.weight(0.3f)) {
 
                         }
                         Spacer(modifier = Modifier.width(12.dp))
-                        ItemCategory(
-                            Modifier.weight(0.3f),
-                            content = context.getString(R.string.str_ct_train),
-                            icon = R.drawable.ic_directions_transit
-                        ) {
+                        ItemCategory(getNewVehicle(context).get(2), Modifier.weight(0.3f)) {
 
                         }
                     }
@@ -294,7 +297,7 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
                     ) {
                         LazyRow {
                             items(viewModel.listTour.value, key = {
-                                it.tourID.toString()
+                                it.tourID
                             }) {
                                 ItemTopBucketTour(it) {
 
@@ -355,14 +358,25 @@ fun ItemTopPlace(items: Places, modifier: Modifier, onSelect: (Places) -> Unit) 
 @Composable
 fun ItemTopBucketTour(tour: Tour, onTouch: (Tour) -> Unit) {
     val coroutineScope = rememberCoroutineScope()
+    val salePrice = remember {
+        mutableStateOf(0.0)
+    }
     val loveState = remember {
         mutableStateOf(false)
     }
-
     coroutineScope.launch {
         loveState.value= database.loveDao().doesItemExist(tour.tourID)
+        salePrice.value = salePriceByTour(tour)
+    }
+    val placesName = remember {
+        mutableStateOf("")
     }
 
+    Firestore.fetchById<Places>("PLACES/${tour.tourAddress}") {
+        if (it != null) {
+            placesName.value = it.placeName
+        }
+    }
     Box(
         Modifier
             .border(width = 1.dp, color = lightGrey, shape = RoundedCornerShape(12.dp))
@@ -387,20 +401,20 @@ fun ItemTopBucketTour(tour: Tour, onTouch: (Tour) -> Unit) {
             }
             Spacer(modifier = Modifier.height(6.dp))
             TextView(
-                text = tour.tourName ?: "Error",
+                text = tour.tourName,
                 modifier = Modifier,
                 font = Font(R.font.poppins_medium)
             )
             Spacer(modifier = Modifier.height(2.dp))
 
                 TextView(
-                    text = tour.salePrice.toString(),
+                    text = salePrice.value.toCurrency(),
                     modifier = Modifier,
                     font = Font(R.font.poppins_medium),
                     color = if (currentTheme == 1) Color.Red else white
                 )
             Spacer(modifier = Modifier.width(3.dp))
-                TextView(text = tour.tourPrice.toString(), modifier = Modifier.drawBehind {
+                TextView(text = tour.tourPrice.toCurrency(), modifier = Modifier.drawBehind {
                     val strokeWidthPx = 1.dp.toPx()
                     val verticalOffset = size.height / 2
                     drawLine(
@@ -421,7 +435,7 @@ fun ItemTopBucketTour(tour: Tour, onTouch: (Tour) -> Unit) {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 TextView(
-                    text = tour.tourAddress.toString(),
+                    text = placesName.value,
                     modifier = Modifier,
                     font = Font(R.font.poppins_medium),
                     color = lightGrey
@@ -453,13 +467,13 @@ fun ItemTopBucketTour(tour: Tour, onTouch: (Tour) -> Unit) {
 }
 
 @Composable
-fun ItemCategory(modifier: Modifier, content: String, icon: Int, onSelect: () -> Unit) {
+fun ItemCategory(vehicle: Vehicle, modifier: Modifier, onSelect: (Vehicle) -> Unit) {
     Box(
         modifier
             .background(color = appColor, shape = RoundedCornerShape(12.dp))
             .padding(vertical = 6.dp)
             .onClick {
-                onSelect.invoke()
+                onSelect.invoke(vehicle)
             }) {
         Row(
             Modifier.fillMaxSize(),
@@ -468,11 +482,11 @@ fun ItemCategory(modifier: Modifier, content: String, icon: Int, onSelect: () ->
         ) {
             Icon(
                 modifier = Modifier.padding(horizontal = 6.dp),
-                painter = painterResource(id = icon),
+                painter = painterResource(id = vehicle.image as Int),
                 contentDescription = "Plane", tint = white
             )
             TextView(
-                text = content,
+                text = vehicle.vhName,
                 modifier = Modifier,
                 textSize = 16, color = white, maxLine = 1
             )

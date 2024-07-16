@@ -8,7 +8,6 @@ import android.util.Base64
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -17,7 +16,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
@@ -41,20 +39,19 @@ import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import dagger.hilt.android.AndroidEntryPoint
 import dong.datn.tourify.R
-import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.app.ContextProvider.Companion.viewModel
-import dong.datn.tourify.app.viewModels
 import dong.datn.tourify.app.authSignIn
 import dong.datn.tourify.firebase.Firestore
+import dong.datn.tourify.model.Sale
+import dong.datn.tourify.model.SaleType
 import dong.datn.tourify.screen.client.MainActivity
 import dong.datn.tourify.screen.staff.StaffActivity
 import dong.datn.tourify.ui.theme.TourifyTheme
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.white
-import dong.datn.tourify.utils.TOUR
 import dong.datn.tourify.utils.USERS
 import dong.datn.tourify.utils.heightPercent
-import dong.duan.travelapp.model.Tour
+import dong.duan.ecommerce.library.showToast
 import dong.duan.travelapp.model.Users
 import kotlinx.coroutines.delay
 import java.security.MessageDigest
@@ -75,6 +72,7 @@ class SplashActivity : ComponentActivity() {
 
         }
 
+
         val accessToken = AccessToken.getCurrentAccessToken()
         Log.d("ACC", "Access: $accessToken")
         try {
@@ -92,6 +90,13 @@ class SplashActivity : ComponentActivity() {
             e.printStackTrace()
         }
 
+
+        Firestore.getListData<Sale>("SALES") {
+            viewModel.listSale.value =
+                it?.filter { it.status == SaleType.RUNNING }?.toMutableList()
+                    ?: mutableListOf()
+        }
+
         setContent {
             TourifyTheme {
                 val systemUiController = rememberSystemUiController()
@@ -100,6 +105,7 @@ class SplashActivity : ComponentActivity() {
                         color = appColor,
                     )
                 }
+
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     SplashScreen(innerPadding) {
                         if (authSignIn == null) {

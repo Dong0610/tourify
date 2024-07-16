@@ -75,8 +75,8 @@
     <string name="all_tour">All tour</string>
     <string name="error">Error. Try again latter!</string>
     <string name="choose_time_and_count">Choose time and quantity:</string>
-    <string name="from">"From: "</string>
-    <string name="to">to:</string>
+    <string name="from"><b>From: </b></string>
+    <string name="to"><b>to:</b></string>
     <string name="adult">Adult</string>
     <string name="child">Children</string>
     <string name="confirm">Confirm</string>
@@ -178,4 +178,15 @@
     <string name="pre_payment">Prepayment</string>
     <string name="customer_name">Customer name</string>
     <string name="artist">Artist</string>
+    <string name="success">Success</string>
+    <string name="warning">Warning</string>
+    <string name="all">All</string>
+    <string name="upcoming">Upcoming</string>
+    <string name="finish">Finish</string>
+    <string name="note_cancel_before">"Note: Cancel before "</string>
+    <string name="order_time">Order time</string>
+    <string name="bill">Invoice</string>
+    <string name="pay">Paid</string>
+    <string name="unpaid_reviews">Unpaid reviews</string>
+    <string name="daily_sale">Daily Sales</string>
 </resources>

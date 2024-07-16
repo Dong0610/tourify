@@ -1,5 +1,6 @@
 package dong.datn.tourify.screen.client
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -31,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,6 +51,7 @@ import com.guru.fontawesomecomposelib.FaIcons
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.app.currentTheme
+import dong.datn.tourify.app.percentDeposit
 import dong.datn.tourify.firebase.RealTime
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.colorByTheme
@@ -60,9 +63,11 @@ import dong.datn.tourify.ui.theme.red
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.transparent
 import dong.datn.tourify.ui.theme.white
+import dong.datn.tourify.utils.CallbackType
 import dong.datn.tourify.utils.CommonDivider
 import dong.datn.tourify.utils.SERVICE
 import dong.datn.tourify.utils.Space
+import dong.datn.tourify.utils.delay
 import dong.datn.tourify.utils.toCurrency
 import dong.datn.tourify.utils.widthPercent
 import dong.datn.tourify.widget.AppButton
@@ -73,21 +78,23 @@ import dong.datn.tourify.widget.VerScrollView
 import dong.datn.tourify.widget.ViewParent
 import dong.datn.tourify.widget.navigationTo
 import dong.datn.tourify.widget.onClick
+import dong.duan.ecommerce.library.showToast
 import dong.duan.livechat.widget.InputValue
 import dong.duan.travelapp.model.Tour
 import dong.duan.travelapp.model.TourTime
+import kotlinx.coroutines.launch
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
     val context = LocalContext.current
-    
+
+
 
     val tour = remember {
         mutableStateOf(viewModels.bookingTourNow.value)
     }
-    val notes = remember {
-        mutableStateOf<String>("")
-    }
+
     val isDisable = remember {
         mutableStateOf(true)
     }
@@ -98,14 +105,16 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
         mutableStateOf<String>("")
     }
 
+    val coroutineScope = rememberCoroutineScope()
+
     if (tour.value != null) {
         RealTime.fetchById<String>("$SERVICE/${tour.value?.tourID}/time") {
             tourTimeService.value = it.toString()
         }
+        coroutineScope.launch {
+           viewModels.salePrice.value = salePriceByTour(tour.value!!)
+        }
     }
-
-
-
     ViewParent(onBack = {
         nav.navigationTo(ClientScreen.DetailTourScreen.route)
     }) {
@@ -166,7 +175,7 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             TextView(
-                                text = tourTimeService.value.toString(),
+                                text = tourTimeService.value,
                                 modifier = Modifier,
                                 font = Font(R.font.poppins_regular),
                                 color = textColor(context)
@@ -179,7 +188,7 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 TextView(
-                                    text = tour.value?.star.toString() ?: "",
+                                    text = tour.value?.star.toString(),
                                     modifier = Modifier,
                                     textSize = 18,
                                     color = gray,
@@ -187,7 +196,7 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                                 )
                             }
                             TextView(
-                                text = tour.value?.salePrice?.toCurrency() ?: "",
+                                text =viewModels. salePrice.value.toCurrency(),
                                 modifier = Modifier,
                                 textSize = 18,
                                 color = if (currentTheme == 1) red else white,
@@ -216,11 +225,12 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
 
                     ArrowValue(
                         name = context.getString(R.string.adult),
-                        price = tour.value!!.salePrice
+                        price =viewModels. salePrice.value,
+                        max = viewModels.tourTimeSelected.value.count
                     ) {
                         viewModels.countAdult.value = it
                         viewModels.totalPrice.value =
-                            (tour.value!!.salePrice * viewModels.countAdult.value) + (tour.value!!.salePrice * 0.75f * viewModels.countChild.value)
+                            (viewModels.salePrice.value * viewModels.countAdult.value) + (viewModels.salePrice.value * 0.75f * viewModels.countChild.value)
                         if (viewModels.totalPrice.value == 0.0 || it == 0) {
                             isDisable.value = true
                         } else {
@@ -230,11 +240,12 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                     Spacer(modifier = Modifier.height(12.dp))
                     ArrowValue(
                         name = context.getString(R.string.child),
-                        price = tour.value!!.salePrice * 0.75
+                        price =viewModels. salePrice.value * 0.75,
+                        max = viewModels.tourTimeSelected.value.count
                     ) {
                         viewModels.countChild.value = it
                         viewModels.totalPrice.value =
-                            (tour.value!!.salePrice * viewModels.countAdult.value) + (tour.value!!.salePrice * 0.75f * viewModels.countChild.value)
+                            (viewModels.salePrice.value * viewModels.countAdult.value) + (viewModels.salePrice.value * 0.75f * viewModels.countChild.value)
                         if (viewModels.totalPrice.value == 0.0 || viewModels.countAdult.value == 0) {
                             isDisable.value = true
                         } else {
@@ -257,7 +268,7 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                         horizontalArrangement = Arrangement.Start
                     ) {
                         InputValue(
-                            value = notes.value,
+                            value = viewModels.notes.value,
                             modifier = Modifier.fillMaxWidth(),
                             hint = context.getString(R.string.notes) + "...",
                             font = Font(R.font.poppins_regular),
@@ -265,7 +276,7 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                             maxLines = 100
 
                         ) {
-                            notes.value = it
+                          viewModels.notes.value = it
                         }
                     }
                 }
@@ -294,7 +305,9 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                 text = context.getString(R.string.confirm),
                 modifier = Modifier.padding(horizontal = 16.dp), loading = null
             ) {
-                isShowDialog.value = true
+                tour.value?.let {
+                    isShowDialog.value = true
+                }
             }
             Spacer(modifier = Modifier.height(12.dp))
         }
@@ -303,13 +316,8 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
         CustomDialog(viewModels.totalPrice.value, {
             isShowDialog.value = false
         }, {
-            viewModels.creteOrderByTour(
-                tour.value!!,
-                notes.value,
-                viewModels.tourTimeSelected.value
-            ) {
-
-            }
+            isShowDialog.value = false
+            nav.navigationTo(ClientScreen.InvoiceOderScreen.route)
         })
     }
 
@@ -320,7 +328,7 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
 fun CustomDialog(totalPrice: Double, onDismiss: () -> Unit, onConfirm: () -> Unit) {
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true)
+        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
     ) {
         Surface(
             modifier = Modifier
@@ -344,15 +352,15 @@ fun CustomDialog(totalPrice: Double, onDismiss: () -> Unit, onConfirm: () -> Uni
                         color = limeGreen
                     )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 TextView(
-                    text = LocalContext.current.getString(R.string.confirm_message) + " ${totalPrice * 0.4}",
+                    text = LocalContext.current.getString(R.string.confirm_message) + " ${(totalPrice * percentDeposit).toCurrency()}",
                     modifier = Modifier,
                     textSize = 18,
                     font = Font(R.font.poppins_regular)
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Row(Modifier.fillMaxWidth(1f)) {
                     Box(
@@ -375,6 +383,7 @@ fun CustomDialog(totalPrice: Double, onDismiss: () -> Unit, onConfirm: () -> Uni
                     Box(
                         Modifier
                             .onClick {
+
                                 onConfirm.invoke()
                             }
                             .height(40.dp)

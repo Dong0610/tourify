@@ -338,11 +338,10 @@ open class StaffActivity : ComponentActivity() {
                             )
                         }
 
-
                         NavHost(
                             modifier = Modifier,
                             navController = navController,
-                            startDestination = StaffScreen.ConversionScreen.route
+                            startDestination = StaffScreen.HomeStaffScreen.route
                         ) {
                             animComposable("home_staff") {
                                 LaunchedEffect(Unit) {

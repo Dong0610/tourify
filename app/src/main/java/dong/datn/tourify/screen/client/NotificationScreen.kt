@@ -53,6 +53,7 @@ import dong.datn.tourify.utils.NOTIFICATION
 import dong.datn.tourify.widget.RoundedImage
 import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.ViewParent
+import dong.datn.tourify.widget.navigationTo
 import dong.datn.tourify.widget.onClick
 import dong.duan.livechat.widget.SearchBox
 import kotlinx.coroutines.GlobalScope
@@ -130,7 +131,15 @@ fun NotificationScreen(navController: NavHostController, viewModels: AppViewMode
                         it.notiId
                     }) {
                         ItemNotification(it) {
-
+                            when (it.type) {
+                                "BOOKING" -> {
+                                    viewModels.currentImage.value = it.link
+                                    navController.navigationTo(
+                                        ClientScreen.DetailImageScreen.route,
+                                        ClientScreen.NotificationScreen.route
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -183,8 +192,10 @@ fun ItemNotification(notification: Notification, callback: (Notification) -> Uni
         modifier = Modifier
             .fillMaxWidth(1f)
             .background(
-                color = if (isReadNoti.value) transparent else colorByTheme(ghostWhite,
-                    iconBackground),
+                color = if (isReadNoti.value) transparent else colorByTheme(
+                    ghostWhite,
+                    iconBackground
+                ),
                 shape = RoundedCornerShape(8.dp)
             )
     ) {
@@ -237,7 +248,7 @@ fun ItemNotification(notification: Notification, callback: (Notification) -> Uni
         Box(modifier = Modifier
             .matchParentSize()
             .onClick {
-                if (isReadNoti.value == false) {
+                if (!isReadNoti.value){
                     isReadNoti.value = true
                     GlobalScope.launch {
                         viewModels.realtime
@@ -252,7 +263,6 @@ fun ItemNotification(notification: Notification, callback: (Notification) -> Uni
                             }
                     }
                 }
-
                 callback.invoke(notification)
             })
     }

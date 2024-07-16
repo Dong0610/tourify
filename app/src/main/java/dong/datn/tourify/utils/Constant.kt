@@ -12,7 +12,8 @@ const val CHAT:String= "CHAT"
 const val NOTIFICATION = "NOTIFICATION"
 const val LOVE: String = "LOVE"
 const val ORDER: String = "ORDER"
-
+const val SALES: String = "SALES"
+const val COMMENT: String = "COMMENT"
 
 
 

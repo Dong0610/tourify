@@ -124,7 +124,7 @@ fun DiscoverScreen(navController: NavHostController, viewModels: AppViewModel) {
                             item.tourName.contains(
                                 it,
                                 ignoreCase = true
-                            ) || item.salePrice.toString().contains(it, ignoreCase = true)
+                            )
                         }.toMutableList()
                     }
                 })

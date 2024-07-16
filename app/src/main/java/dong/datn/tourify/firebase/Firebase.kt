@@ -8,7 +8,10 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import dong.datn.tourify.firebase.FirebaseApp.listenValueAsync
+import dong.duan.ecommerce.library.showToast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -203,7 +206,6 @@ object RealTime {
 
         fun withId(idProvider: (String) -> Unit): Push<T> {
             isSetPath = true
-
             idProvider.invoke(this.newId!!)
             return this
         }
@@ -351,6 +353,7 @@ object RealTime {
 }
 
 object Firestore {
+    @OptIn(DelicateCoroutinesApi::class)
     inline fun <reified T> fetchById(ref: DocumentReference, crossinline callback: (T?) -> Unit) {
         GlobalScope.launch(Dispatchers.Main) {
             try {
@@ -367,6 +370,145 @@ object Firestore {
             }
         }
     }
+
+
+    inline fun <reified T> getValue(
+        path: String,
+        field: String,
+        crossinline onSuccess: (T?) -> Unit,
+        crossinline onFailure: (String) -> Unit
+    ) {
+        val firestore = FirebaseFirestore.getInstance()
+        val docRef = firestore.document(path)
+        docRef.get().addOnSuccessListener { snapshot ->
+            val value = snapshot.get(field)
+            val result: T? = when {
+                T::class == String::class -> {
+                    when (value) {
+                        is String -> value as T
+                        else -> null
+                    }
+                }
+
+                T::class == Long::class -> {
+                    when (value) {
+                        is Long -> value as T
+                        else -> null
+                    }
+                }
+
+                T::class == Int::class -> {
+                    when (value) {
+                        is Long -> value.toInt() as T
+                        is Int -> value as T
+                        else -> null
+                    }
+                }
+
+                T::class == Boolean::class -> {
+                    when (value) {
+                        is Boolean -> value as T
+                        else -> null
+                    }
+                }
+
+                T::class == Double::class -> {
+                    when (value) {
+                        is Double -> value as T
+                        is Long -> value.toDouble() as T
+                        is Int -> value.toDouble() as T
+                        is Float -> value.toDouble() as T
+                        else -> null
+                    }
+                }
+
+                T::class == List::class -> {
+                    @Suppress("UNCHECKED_CAST")
+                    if (value is List<*>) {
+                        value as T
+                    } else {
+                        null
+                    }
+                }
+
+                else -> null
+            }
+
+            onSuccess.invoke(result)
+        }.addOnFailureListener { e ->
+            e.printStackTrace()
+            onFailure.invoke(e.message.toString())
+        }
+    }
+
+    suspend inline fun <reified T> getValue(
+        path: String,
+        field: String
+    ): T? {
+        val data = try {
+            val firestore = FirebaseFirestore.getInstance()
+            val docRef = firestore.document(path)
+            val snapshot = docRef.get().await()
+
+            if (snapshot.exists()) {
+                val value = snapshot.get(field)
+                when (T::class) {
+                    String::class -> {
+                        if (value is String) value as T else null
+                    }
+                    Long::class -> {
+                        when (value) {
+                            is Long -> value as T
+                            is Int -> value.toLong() as T
+                            else -> null
+                        }
+                    }
+                    Int::class -> {
+                        when (value) {
+                            is Long -> value.toInt() as T
+                            is Int -> value as T
+                            else -> null
+                        }
+                    }
+                    Boolean::class -> {
+                        if (value is Boolean) value as T else null
+                    }
+                    Double::class -> {
+                        when (value) {
+                            is Double -> value as T
+                            is Long -> value.toDouble() as T
+                            is Int -> value.toDouble() as T
+                            is Float -> value.toDouble() as T
+                            else -> null
+                        }
+                    }
+                    Float::class -> {
+                        when (value) {
+                            is Double -> value as T
+                            is Long -> value.toDouble() as T
+                            is Int -> value.toDouble() as T
+                            is Float -> value.toDouble() as T
+                            else -> null
+                        }
+                    }
+                    List::class -> {
+                        @Suppress("UNCHECKED_CAST")
+                        if (value is List<*>) value as T else null
+                    }
+                    else -> null
+                }
+            } else {
+                Log.d("Exception", "Document not found at path: $path")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("Exception", "Error fetching document at path: $path, message: ${e.message}")
+            e.printStackTrace()
+            null
+        }
+        return data
+    }
+
 
     inline fun <reified T> fetchById(path: String, crossinline callback: (T?) -> Unit) {
         val firestore = FirebaseFirestore.getInstance()

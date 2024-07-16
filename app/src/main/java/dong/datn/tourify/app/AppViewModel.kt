@@ -1,6 +1,7 @@
 package dong.datn.tourify.app
 
 import android.annotation.SuppressLint
+import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -19,6 +20,7 @@ import com.google.firebase.firestore.firestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.messaging
+import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dong.datn.tourify.R
@@ -26,18 +28,26 @@ import dong.datn.tourify.database.LoveItem
 import dong.datn.tourify.database.LoveItemRemote
 import dong.datn.tourify.firebase.Firestore
 import dong.datn.tourify.firebase.RealTime
+import dong.datn.tourify.firebase.putImgToStorage
 import dong.datn.tourify.model.Chat
 import dong.datn.tourify.model.ChatType
+import dong.datn.tourify.model.Comment
+import dong.datn.tourify.model.CommentType
 import dong.datn.tourify.model.ConversionChat
+import dong.datn.tourify.model.Emoji
 import dong.datn.tourify.model.Notification
 import dong.datn.tourify.model.Order
 import dong.datn.tourify.model.OrderStatus
 import dong.datn.tourify.model.OtpCode
 import dong.datn.tourify.model.Places
+import dong.datn.tourify.model.Reply
+import dong.datn.tourify.model.Sale
 import dong.datn.tourify.screen.client.ClientScreen
 import dong.datn.tourify.screen.start.AccountScreen
 import dong.datn.tourify.utils.CHAT
+import dong.datn.tourify.utils.COMMENT
 import dong.datn.tourify.utils.CONVERSION
+import dong.datn.tourify.utils.CallbackType
 import dong.datn.tourify.utils.LOVE
 import dong.datn.tourify.utils.MailSender
 import dong.datn.tourify.utils.NOTIFICATION
@@ -71,6 +81,8 @@ import javax.inject.Inject
 @HiltViewModel
 class AppViewModel @Inject constructor() : ViewModel() {
 
+    val currentImage = mutableStateOf("")
+    val loadingState = mutableStateOf(false)
     val countUnReadNoti = mutableStateOf(0)
     val listNotifications = mutableStateOf(mutableListOf<Notification>())
     val listConversations = mutableStateOf<MutableList<ConversionChat>>(mutableListOf())
@@ -81,6 +93,9 @@ class AppViewModel @Inject constructor() : ViewModel() {
         mutableStateOf<Tour?>(null)
     val  listTour =
         mutableStateOf<MutableList<Tour>>(mutableListOf())
+
+    val listSale =
+        mutableStateOf<MutableList<Sale>>(mutableListOf())
 
     var currentChat = mutableStateOf<ConversionChat?>(null)
     fun resetCurrentChat() {
@@ -112,9 +127,6 @@ class AppViewModel @Inject constructor() : ViewModel() {
         mutableStateOf(0)
     val totalPrice =
         mutableStateOf(0.0)
-
-    val percentChidl = mutableStateOf(0.8f)
-
 
     var listChatCurrent: MutableState<MutableList<Chat>> = mutableStateOf(mutableListOf())
     private var childEventListenerCurrentChat: ChildEventListener? = null
@@ -317,8 +329,11 @@ class AppViewModel @Inject constructor() : ViewModel() {
                                     router = "history_screen"
 
                                 )
-                                loadTourLove(user.UId)
-                                loadLastChatTour(user)
+                                if (user.Role == "User") {
+                                    loadTourLove(user.UId)
+                                    loadLastChatTour(user)
+                                }
+
                             }
 
                             onSuccess.invoke(1)
@@ -392,7 +407,7 @@ class AppViewModel @Inject constructor() : ViewModel() {
         content: String,
         type: String = "COMMON",
         link: String,
-        router: String
+        router: String, callback: ((Notification) -> Unit?)? = null
     ) {
         val notification = Notification(
             notiId = "",
@@ -415,6 +430,7 @@ class AppViewModel @Inject constructor() : ViewModel() {
             .set(notification)
             .finish {
                 Log.d("PushNoti", "")
+                callback?.invoke(notification)
             }.error {
                 showToast(it)
             }.executeAsync()
@@ -752,20 +768,34 @@ class AppViewModel @Inject constructor() : ViewModel() {
 
     }
 
-    fun creteOrderByTour(tour: Tour, note: String, tourTime: TourTime, function: () -> Unit) {
+    var currentOrder = mutableStateOf<Order?>(null)
+    val notes =
+        mutableStateOf("")
+    val salePrice = mutableStateOf(0.0)
 
+    fun creteOrderByTour(
+        tour: Tour,
+        note: String,
+        sale: Double,
+        tourTime: TourTime,
+        function: (CallbackType, String, Notification) -> Unit
+    ) {
+        val totalPrice = (countAdult.value * sale) + (countChild.value * sale)
 
-        var order = Order(
+        currentOrder.value = Order(
             orderID = "",
             userOrderId = authSignIn!!.UId,
             tourName = tour.tourName,
             tourTime = tourTime,
             tourID = tour.tourID,
             orderDate = timeNow(),
-            price =  totalPrice.value,
-            saleId = "",
+            saleId = tour.saleId,
+            tourPrice = sale,
+            prePayment = totalPrice * percentDeposit,
+            totalPrice = totalPrice,
             staffConfirmId = "",
             note = note,
+            invoiceUrl = "",
             adultCount = countAdult.value,
             childCount = countChild.value,
             paymentMethod = PaymentMethod(),
@@ -774,19 +804,204 @@ class AppViewModel @Inject constructor() : ViewModel() {
             cancelDate = "",
             cancelBefore = "",
         )
-
         Firestore.pushAsync<Order>("$ORDER")
             .withId {
-                order.orderID=it
+                currentOrder.value?.orderID = it
             }
-            .set(order)
-            .finish {  }
+            .set(currentOrder.value!!)
+            .finish {
+                Firestore.updateAsync("$TOUR/${tour.tourID}", hashMapOf<String, Any>().apply {
+                    put("countTour", tour.countTour - 1)
+                })
+
+                pushNewNotification(
+                    "Successful tour booking",
+                    "https://firebasestorage.googleapis.com/v0/b/travelapp-datn.appspot.com/o/OTHER%2Fimge_push.png?alt=media&token=50f72c11-6462-4fd0-b7c4-65bd80a75b32",
+                    authSignIn!!.UId,
+                    authSignIn!!.UId,
+                    "You just book a successful tour at ${timeNow()}. We will handle you in the shortest time",
+                    type = "BOOKING",
+                    link = "",
+                    router = "detail_image_screen"
+                ) {
+                    function.invoke(CallbackType.SUCCESS, currentOrder.value!!.orderID, it)
+                }
+
+            }
             .error {
-                showToast(it)
+                function(CallbackType.ERROR, "", Notification())
             }.execute()
     }
 
+
+    val dialogState = mutableStateOf(false)
+    val dialogTitle = mutableStateOf("")
+    val dialogMessage = mutableStateOf("")
+    val dialogType = mutableStateOf(CallbackType.SUCCESS)
+    var dialogCallback: (() -> Unit)? = null
+
+    fun showDialog(
+        message: String,
+        type: CallbackType,
+        title: String = "",
+        callback: (() -> Unit)? = null
+    ) {
+        dialogType.value = type
+
+        dialogTitle.value = title
+        dialogMessage.value = message
+        dialogCallback = callback
+        dialogState.value = true
+    }
+
+
+    fun checkExitOrder(tour: Tour, callback: (Boolean) -> Unit) {
+        firestore.collection("$ORDER")
+            .get().addOnSuccessListener {
+                for (document in it) {
+                    val order = document.toObject(Order::class.java)
+                    if (order.tourID == tour.tourID && order.orderStatus != OrderStatus.FINISH) {
+                        callback(true)
+                    }
+                    return@addOnSuccessListener
+                }
+                callback(false)
+            }
+            .addOnFailureListener {
+                callback.invoke(false)
+            }
+    }
+
+    fun updateToData(url: String?, value: Order?, function: (Boolean) -> Unit) {
+
+    }
+
+    fun saveCommentByTour(
+        tour: Tour,
+        comment: String,
+        star: Float,
+        image: MutableList<Any?>,
+        function: () -> Unit
+    ) {
+        image.remove(null)
+        val comment = Comment(
+            commentId = "",
+            uId = authSignIn!!.UId,
+            content = comment,
+            tourId = tour.tourID,
+            timeComment = timeNow(),
+            ratting = star,
+            commentType = CommentType.COMMENT,
+            emoji = Emoji.NONE,
+            listImage = mutableListOf(),
+            response = mutableListOf()
+        )
+
+        if (image.size != 0) {
+            pushImageComment(image, tour.tourID) {
+                comment.listImage = it.toMutableList()
+                RealTime.Push<Comment>("$COMMENT/${tour.tourID}")
+                    .newId()
+                    .withId {
+                        comment.commentId = it
+                    }
+                    .set(comment)
+                    .finish {
+                        val avgStar = tour.star * tour.countRating;
+                        tour.star = (avgStar + star) / (tour.countRating + 1)
+                        Firestore.updateAsync(
+                            "$TOUR/${tour.tourID}",
+                            hashMapOf("star" to tour.star, "countRating" to tour.countRating + 1)
+                        )
+                        function.invoke()
+
+                    }
+                    .error { }
+                    .executeAsync()
+            }
+        } else {
+            RealTime.Push<Comment>("$COMMENT/${tour.tourID}")
+                .newId()
+                .withId {
+                    comment.commentId = it
+                }
+                .set(comment)
+                .finish {
+                    val avgStar = tour.star * tour.countRating;
+                    tour.star = (avgStar + star) / (tour.countRating + 1)
+                    Firestore.updateAsync(
+                        "$TOUR/${tour.tourID}",
+                        hashMapOf("star" to tour.star, "countRating" to tour.countRating + 1)
+                    )
+                    function.invoke()
+                }
+                .error { }
+                .executeAsync()
+        }
+
+
+    }
+
+    private fun pushImageComment(
+        imageData: MutableList<Any?>,
+        tourID: String,
+        callback: (MutableList<String>) -> Unit
+    ) {
+        val listUrl = mutableListOf<String>()
+        for (i in 0 until imageData.size) {
+            val reference = FirebaseStorage.getInstance().getReference("Comment/$tourID")
+            reference.putImgToStorage(appContext, imageData.get(i) as Uri) {
+                listUrl.add(it.toString())
+                if (listUrl.size == imageData.size) {
+                    callback.invoke(listUrl)
+                }
+            }
+        }
+    }
+
+    fun replyComment(value: String, comment: Comment, function: () -> Unit) {
+        val reponse = Reply(
+            commentId = comment.commentId + "_" + comment.response.size + 1,
+            uId = authSignIn!!.UId,
+            content = value,
+            timeComment = timeNow(),
+            emoji = Emoji.NONE
+        )
+        comment.response.add(reponse)
+        RealTime.udapteAsync(
+            "$COMMENT/${comment.tourId}/${comment.commentId}",
+            comment,
+            { function.invoke() },
+            {})
+    }
+
+    fun replyReplyComment(
+        value: String,
+        comment: Comment,
+        reply: String,
+        function: (Reply) -> Unit
+    ) {
+        val reponse = Reply(
+            commentId = comment.commentId + "_" + comment.response.size + 1,
+            uId = authSignIn!!.UId,
+            content = value,
+            timeComment = timeNow(),
+            emoji = Emoji.NONE
+        )
+        comment.response.add(reponse)
+        RealTime.udapteAsync(
+            "$COMMENT/${comment.tourId}/${reply}/response",
+            comment.response,
+            { function.invoke(reponse) },
+            {})
+    }
+
+    val listOrders = mutableStateOf<MutableList<Order>>(mutableListOf())
+
+
 }
+
+
 
 
 

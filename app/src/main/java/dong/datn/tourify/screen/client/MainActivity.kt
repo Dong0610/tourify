@@ -6,7 +6,6 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
@@ -20,6 +19,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,6 +34,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomAppBar
@@ -43,11 +49,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
@@ -59,16 +72,24 @@ import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import dong.datn.tourify.R
 import dong.datn.tourify.app.ContextProvider.Companion.viewModel
+import dong.datn.tourify.app.authSignIn
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.app.isShowTrailer
 import dong.datn.tourify.app.viewModels
 import dong.datn.tourify.firebase.Firestore
 import dong.datn.tourify.merchant.api.CreateOrder
-import dong.datn.tourify.screen.view.BillBooking
+import dong.datn.tourify.model.Order
+import dong.datn.tourify.screen.view.CreateInvoiceOrder
+import dong.datn.tourify.screen.view.DetailImageScreen
 import dong.datn.tourify.ui.theme.TourifyTheme
 import dong.datn.tourify.ui.theme.black
+import dong.datn.tourify.ui.theme.fromColor
+import dong.datn.tourify.ui.theme.mediumBlue
 import dong.datn.tourify.ui.theme.navigationBar
+import dong.datn.tourify.ui.theme.orangeRed
 import dong.datn.tourify.ui.theme.white
+import dong.datn.tourify.utils.DialogState
+import dong.datn.tourify.utils.ORDER
 import dong.datn.tourify.utils.TOUR
 import dong.datn.tourify.utils.changeTheme
 import dong.datn.tourify.utils.heightPercent
@@ -104,40 +125,42 @@ sealed class ClientScreen(var route: String) {
     data object BookingNowScreen : ClientScreen("booking_now_client")
     data object ChatScreen : ClientScreen("chat_screen")
     data object UpdatePasswordScreen : ClientScreen("update_password_screen")
-    data object BillBooking : ClientScreen("bill_booking_client")
+    data object InvoiceOderScreen : ClientScreen("invoice_oder_screen")
+    data object DetailImageScreen : ClientScreen("detail_image_screen")
+    data object ReviewScreen : ClientScreen("review_screen")
 }
 
-
-open class MainActivity : ComponentActivity() {
-    private fun getCountry(context: Context): String? {
-        if (ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            return null
-        }
-
-
-        val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val geocoder = Geocoder(context, Locale.getDefault())
-
-        for (provider in lm.allProviders) {
-            val location: Location? = lm.getLastKnownLocation(provider)
-            if (location != null) {
-                try {
-                    val addresses =
-                        geocoder.getFromLocation(location.latitude, location.longitude, 1)
-                    if (addresses != null && addresses.isNotEmpty()) {
-                        return addresses[0].countryName
-                    }
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                }
-            }
-        }
+private fun getCountry(context: Context): String? {
+    if (ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) != PackageManager.PERMISSION_GRANTED
+    ) {
         return null
     }
+
+
+    val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+    val geocoder = Geocoder(context, Locale.getDefault())
+
+    for (provider in lm.allProviders) {
+        val location: Location? = lm.getLastKnownLocation(provider)
+        if (location != null) {
+            try {
+                val addresses =
+                    geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                if (addresses != null && addresses.isNotEmpty()) {
+                    return addresses[0].countryName
+                }
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
+    }
+    return null
+}
+
+open class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -227,8 +250,8 @@ open class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(
-                Color.TRANSPARENT,
-                Color.TRANSPARENT
+                fromColor("#00ffffff"),
+                fromColor("#00ffffff")
             )
         )
 
@@ -246,7 +269,18 @@ open class MainActivity : ComponentActivity() {
                 Firestore.getListData<Tour>(Firebase.firestore.collection("$TOUR")) {
                     viewModel.listTour.value = it ?: mutableListOf()
                 }
+                viewModels.firestore.collection("$ORDER")
+                    .get()
+                    .addOnSuccessListener {
+                        val orderList = it.toObjects(Order::class.java)
+                        val data =
+                            orderList.filter { it.userOrderId == authSignIn!!.UId }.toMutableList()
+                        data.sortBy { it.timeNow }
+                        viewModel.listOrders.value = data
+
+                    }
             }
+
 
             val coroutineScope = rememberCoroutineScope()
             val country = remember { mutableStateOf<String?>(null) }
@@ -281,12 +315,19 @@ open class MainActivity : ComponentActivity() {
             if (isShowTrailer) {
                 TrailerImageDialog()
             }
+            if (viewModels.loadingState.value) {
+                LoaddingDialog()
+            }
+
+            if (viewModels.dialogState.value) {
+                DialogState(viewModels.dialogType.value)
+            }
 
         }
 
     }
 
-    @OptIn(ExperimentalPagerApi::class)
+
     @Composable
     fun TrailerImageDialog() {
         val showDialog = remember { mutableStateOf(true) }
@@ -301,6 +342,59 @@ open class MainActivity : ComponentActivity() {
                     }
                 )
 
+            }
+        }
+    }
+
+    @Composable
+    fun LoaddingDialog() {
+
+        Dialog(
+            onDismissRequest = {},
+            properties = DialogProperties(
+                dismissOnClickOutside = false,
+                dismissOnBackPress = false
+            )
+        ) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                GradientCircularProgressBar()
+            }
+
+
+        }
+
+    }
+
+    @Composable
+    fun GradientCircularProgressBar(
+        modifier: Modifier = Modifier,
+        colors: List<Color> = listOf(white, mediumBlue, orangeRed),
+        strokeWidth: Dp = 6.dp
+    ) {
+        val infiniteTransition = rememberInfiniteTransition(label = "")
+        val rotation = infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1200, easing = LinearEasing)
+            ), label = ""
+        )
+
+        Canvas(modifier = modifier
+            .size(46.dp)
+            .graphicsLayer { rotationZ = rotation.value }) {
+            val sweepAngle = 100f
+            val gapAngle = 20f
+
+            for (i in colors.indices) {
+                val startAngle = i * (sweepAngle + gapAngle)
+                drawArc(
+                    brush = Brush.linearGradient(listOf(colors[i], colors[i])),
+                    startAngle = startAngle,
+                    sweepAngle = sweepAngle,
+                    useCenter = false,
+                    style = Stroke(strokeWidth.toPx(), cap = StrokeCap.Round)
+                )
             }
         }
     }
@@ -466,9 +560,6 @@ open class MainActivity : ComponentActivity() {
                         }
                         UpdateProfileScreen(navController, viewModels)
                     }
-                    animComposable(ClientScreen.BillBooking.route) {
-                        BillBooking(navController)
-                    }
                     animComposable(ClientScreen.SettingScreen.route) {
 
                         LaunchedEffect(Unit) {
@@ -527,12 +618,32 @@ open class MainActivity : ComponentActivity() {
                         ChatScreen(navController, viewModels)
                     }
                     animComposable(ClientScreen.UpdatePasswordScreen.route) {
-
                         LaunchedEffect(Unit) {
                             keyboardController?.hide()
                             bottomBarState.value = false
                         }
                         UpdatePassScreen(navController, viewModels)
+                    }
+                    animComposable(ClientScreen.InvoiceOderScreen.route) {
+                        LaunchedEffect(Unit) {
+                            keyboardController?.hide()
+                            bottomBarState.value = false
+                        }
+                        CreateInvoiceOrder(navController, viewModels)
+                    }
+                    animComposable(ClientScreen.DetailImageScreen.route) {
+                        LaunchedEffect(Unit) {
+                            keyboardController?.hide()
+                            bottomBarState.value = false
+                        }
+                        DetailImageScreen(navController, viewModels)
+                    }
+                    animComposable(ClientScreen.ReviewScreen.route) {
+                        LaunchedEffect(Unit) {
+                            keyboardController?.hide()
+                            bottomBarState.value = false
+                        }
+                        ReviewScreen(navController, viewModels)
                     }
                 }
 

@@ -13,7 +13,13 @@ data class PaymentMethod(
 enum class OrderStatus {
     PENDING,
     PAID,
+    RUNNING,
     CANCELED, FINISH,
+}
+enum class PaymentStatus {
+    PREPAYMENT,
+    FINISHED,
+    REFUND
 }
 
 class Order(
@@ -23,12 +29,17 @@ class Order(
     var tourTime: TourTime= TourTime(),
     var tourID: String =  "",
     var orderDate: String =  "",
-    var price: Double =  0.0,
     var saleId: String = "",
+    var tourPrice: Double = 0.0,
+    var prePayment: Double = 0.0,
+    var totalPrice: Double = 0.0,
+    var refund: Double = 0.0,
+    var paymentStatus: PaymentStatus = PaymentStatus.PREPAYMENT,
     var staffConfirmId: String = "",
-    var note: String =  "",
+    var note: String = "",
     var adultCount: Int = 0,
     var childCount: Int = 0,
+    var invoiceUrl: String = "",
     var paymentMethod: PaymentMethod =  PaymentMethod(),
     var orderStatus: OrderStatus =  OrderStatus.PENDING,
     var cancelReason: String =  "",

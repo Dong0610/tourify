@@ -12,12 +12,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import dong.datn.tourify.firebase.Firestore
-import dong.datn.tourify.model.Places
+import dong.datn.tourify.app.viewModels
 import dong.datn.tourify.model.createFamousPlaces
+import dong.datn.tourify.model.generateSales
 import dong.datn.tourify.ui.theme.TourifyTheme
+import dong.datn.tourify.utils.SALES
+import dong.datn.tourify.utils.SpaceH
+import dong.datn.tourify.utils.TOUR
 import dong.datn.tourify.widget.AppButton
 import dong.datn.tourify.widget.VerScrollView
+import dong.duan.ecommerce.library.showToast
+import dong.duan.travelapp.model.RandomTour
 
 class AddDataActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,8 +43,22 @@ class AddDataActivity : ComponentActivity() {
 fun DefaultPreview(padding: PaddingValues) {
     VerScrollView(Modifier.padding(padding)) {
         Column {
-            AppButton(text = "Places", modifier = Modifier) {
+            AppButton(text = "Places", modifier = Modifier, isEnable = true) {
                 putPlaceData {
+                    Log.d("Put", "put: ${it}")
+                }
+            }
+            SpaceH(h = 12)
+            AppButton(text = "Tour", modifier = Modifier, isEnable = true) {
+             
+                putTourData {
+                    Log.d("Put", "put: ${it}")
+                }
+            }
+            SpaceH(h = 12)
+            AppButton(text = "Sale", modifier = Modifier, isEnable = true) {
+             
+                putSaleData {
                     Log.d("Put", "put: ${it}")
                 }
             }
@@ -47,17 +66,39 @@ fun DefaultPreview(padding: PaddingValues) {
     }
 }
 
-fun putPlaceData(callback: (String) -> Unit) {
-    createFamousPlaces().forEach { place ->
-        Firestore.pushAsync<Places>("PLACES")
-            .withId { place.placeID = it }
-            .set(place)
-            .finish {
-                callback.invoke(place.placeID)
-            }
-            .error {
+fun putSaleData(function: (String) -> Int) {
+    generateSales().forEach { place ->
+        viewModels.firestore.collection("${SALES}")
+            .document("${place.saleId}")
+            .set(place).addOnSuccessListener {
+                function.invoke(place.saleId)
+            }.addOnFailureListener {
                 Log.d("Put", "error: $it")
             }
-            .execute()
+    }
+}
+
+fun putTourData(function: (String) -> Unit) {
+
+    RandomTour.dataRandom().forEach { place ->
+        viewModels.firestore.collection("${TOUR}")
+            .document("${place.tourID}")
+            .set(place).addOnSuccessListener {
+                function.invoke(place.tourID)
+            }.addOnFailureListener {
+                Log.d("Put", "error: $it")
+            }
+    }
+}
+
+fun putPlaceData(function: (String) -> Unit) {
+    createFamousPlaces().forEach { place ->
+        viewModels.firestore.collection("PLACES")
+            .document("${place.placeID}")
+            .set(place).addOnSuccessListener {
+                function.invoke(place.placeID)
+            }.addOnFailureListener {
+                Log.d("Put", "error: $it")
+            }
     }
 }

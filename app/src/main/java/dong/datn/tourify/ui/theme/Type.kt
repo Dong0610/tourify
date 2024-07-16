@@ -8,6 +8,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import dong.datn.tourify.app.currentTheme
+import java.time.Duration
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 // Set of Material typography styles to start with
 val Typography = Typography(
@@ -75,6 +81,29 @@ fun colorByTheme(light: Color = Color.Black, dark: Color = Color.Black): Color {
 
 fun colorByTheme(light: String = "#000000", dark: String = "#ffffff", currentTheme: Int): Int {
     return if (currentTheme == 1) fromColor(light) else fromColor(dark)
+}
+fun formatRelativeTime(timestamp: String): String {
+    val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")
+    val dateTime = LocalDateTime.parse(timestamp, formatter)
+    val zonedDateTime = dateTime.atZone(ZoneId.systemDefault())
+    val now = ZonedDateTime.now(ZoneId.systemDefault())
+
+    val duration = Duration.between(zonedDateTime, now)
+    return when {
+        duration.toMinutes() < 1 -> "just now"
+        duration.toMinutes() < 60 -> "${duration.toMinutes()} minutes"
+        duration.toHours() < 24 -> "${duration.toHours()} hours"
+        duration.toDays() < 7 -> "${duration.toDays()} days"
+        duration.toDays() < 30 -> "${duration.toDays() / 7} weeks"
+        duration.toDays() < 365 -> "${duration.toDays() / 30} months"
+        else -> "${duration.toDays() / 365} years"
+    }
+}
+fun getTimeBeforeHours(dateTimeString: String, hour: Int = 36): String {
+    val formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")
+    val dateTime = LocalDateTime.parse(dateTimeString, formatter)
+    val dateTimeBefore48Hours = dateTime.minus(hour.toLong(), ChronoUnit.HOURS)
+    return dateTimeBefore48Hours.format(formatter)
 }
 
 fun fromColor(code: String): Int {

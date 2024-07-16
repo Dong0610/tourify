@@ -36,6 +36,16 @@ class SharedPreference {
         }
     }
 
+    fun getFloat(key: String, default: Float = 0f): Float {
+        return sharedPreferences.getFloat(key, default)
+    }
+
+    fun putFloat(key: String, value: Float) {
+        edit {
+            putFloat(key, value)
+        }
+    }
+
     fun getInt(key: String, default: Int = 0): Int {
         return sharedPreferences.getInt(key, default)
     }

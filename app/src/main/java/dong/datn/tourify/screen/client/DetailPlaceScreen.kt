@@ -50,8 +50,10 @@ import dong.datn.tourify.ui.theme.iconBackground
 import dong.datn.tourify.ui.theme.lightGrey
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.white
+import dong.datn.tourify.utils.SALES
 import dong.datn.tourify.utils.TOUR
 import dong.datn.tourify.utils.heightPercent
+import dong.datn.tourify.utils.toCurrency
 import dong.datn.tourify.utils.widthPercent
 import dong.datn.tourify.widget.DotIndicator
 import dong.datn.tourify.widget.InnerImageIcon
@@ -185,9 +187,17 @@ fun TourByPlace(data: String, onSelect: (Tour) -> Unit) {
     val tour = remember {
         mutableStateOf<Tour?>(null)
     }
+    val salePrice = remember {
+        mutableStateOf(0.0)
+    }
+
     Firestore.fetchById<Tour>("$TOUR/$data/") {
         tour.value = it
+        Firestore.getValue<Float>("$SALES/${it?.saleId}", "percent", {
+            salePrice.value = (tour.value!!.tourPrice * (1 - (it ?: 0f)))
+        }, {})
     }
+
     val context= LocalContext.current
     if (tour.value != null) {
         Box(
@@ -210,7 +220,7 @@ fun TourByPlace(data: String, onSelect: (Tour) -> Unit) {
                         .widthPercent(40f)
                 ) {
                     RoundedImage(
-                        tour.value!!.tourImage?.get(0),
+                        tour.value!!.tourImage.get(0),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .fillMaxSize(),
@@ -222,14 +232,14 @@ fun TourByPlace(data: String, onSelect: (Tour) -> Unit) {
 
 
                     TextView(
-                        text = tour.value!!.tourName ?: context.getString(R.string.error),
+                        text = tour.value!!.tourName,
                         modifier = Modifier,
                         font = Font(R.font.poppins_medium)
                     )
                     Spacer(modifier = Modifier.height(2.dp))
 
                     TextView(
-                        text = tour.value!!.salePrice.toString(),
+                        text = salePrice.value.toCurrency(),
                         modifier = Modifier,
                         font = Font(R.font.poppins_medium),
                         color = if (currentTheme == 1) Color.Red else white
@@ -258,7 +268,7 @@ fun TourByPlace(data: String, onSelect: (Tour) -> Unit) {
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         TextView(
-                            text = tour.value!!.star.toString() ?: "",
+                            text = tour.value!!.star.toString(),
                             modifier = Modifier,
                             textSize = 18,
                             color = gray,

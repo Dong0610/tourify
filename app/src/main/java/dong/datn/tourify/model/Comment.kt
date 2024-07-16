@@ -8,14 +8,27 @@ data class Comment(
     var uId: String = "",
     var content: String = "",
     var timeComment: String = "",
-    var ratting:Int=0,
+    var tourId: String = "",
+    var ratting:Float=0f,
     var emoji: Emoji = Emoji.NONE,
+    var commentType: CommentType= CommentType.COMMENT,
     var listImage: MutableList<Any> = mutableListOf(),
-    var response: MutableList<Comment> = mutableListOf()
+    var response: MutableList<Reply> = mutableListOf()
 ) : BaseModel<Comment>()
-
+data class Reply(
+    var commentId: String = "",
+    var uId: String = "",
+    var content: String = "",
+    var parentId: String = "",
+    var timeComment: String = "",
+    var tourId: String = "",
+    var emoji: Emoji = Emoji.NONE,
+) : BaseModel<Comment>()
 enum class Emoji {
     NONE, LIKE, LOVE, DISLIKE, ANGRY
+}
+enum class CommentType {
+    COMMENT, RESPONSE
 }
 
 fun createCommentList(): List<Comment> {
@@ -25,26 +38,17 @@ fun createCommentList(): List<Comment> {
             uId = "VFETLnkQnFZl16ebO7LpJMkR0lC3",
             content = "This is the first comment",
             timeComment = "10:00 AM",
-            ratting = 5,
+            ratting = 5f,
             emoji = Emoji.LIKE,
             listImage = mutableListOf(R.drawable.img_test_data_1,R.drawable.img_test_data_2),
-            response = mutableListOf(
-                Comment(
-                    commentId = "1.1",
-                    uId = "bbLcZjz0hKNmTp2MwTuhOZJTGH02",
-                    content = "Response to the first comment",
-                    timeComment = "10:15 AM",
-                    ratting = 4,
-                    emoji = Emoji.LOVE
-                )
-            )
+
         ),
         Comment(
             commentId = "2",
             uId = "VFETLnkQnFZl16ebO7LpJMkR0lC3",
             content = "This is the second comment",
             timeComment = "11:00 AM",
-            ratting = 3,
+            ratting = 3f,
             emoji = Emoji.ANGRY
         ),
         Comment(
@@ -52,7 +56,7 @@ fun createCommentList(): List<Comment> {
             uId = "VFETLnkQnFZl16ebO7LpJMkR0lC3",
             content = "This is the third comment",
             timeComment = "12:00 PM",
-            ratting = 2,
+            ratting = 2f,
             emoji = Emoji.DISLIKE
         ),
         Comment(
@@ -60,7 +64,7 @@ fun createCommentList(): List<Comment> {
             uId = "VFETLnkQnFZl16ebO7LpJMkR0lC3",
             content = "This is the fourth comment",
             timeComment = "01:00 PM",
-            ratting = 1,
+            ratting = 1f,
             emoji = Emoji.NONE
         )
     )

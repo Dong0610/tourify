@@ -1,5 +1,9 @@
 package dong.duan.travelapp.model
 
+import dong.datn.tourify.app.appContext
+import dong.datn.tourify.model.createFamousPlaces
+import dong.datn.tourify.model.getNewVehicle
+
 data class TourTime(
     var timeID: String =  "",
     var tourTime: String =  "",
@@ -14,15 +18,15 @@ data class Tour(
     var tourDescription: String =  "",
     var tourImage: MutableList<String> =  mutableListOf(),
     var tourPrice: Double =  0.0,
-    var salePrice: Double =  0.0,
+    var saleId: String =  "",
     var success: Int =  0,
     var cancel: Int =  0,
-    var countTour: String =  "",
-    var star: String =  "",
-    var countRating: String =  "",
+    var countTour: Int = 10,
+    var star: Double = 4.5,
+    var countRating: Int = 100,
     var tourTime: MutableList<TourTime> =  mutableListOf(),
     var tourAddress: String =  "",
-    var tourCategory: MutableList<Category> = mutableListOf()
+    var vehicleId: String=""
 ) : BaseModel<Tour>()
 
 fun listImage(): MutableList<String> {
@@ -48,62 +52,62 @@ object RandomTour {
                 tourDescription = "Explore the iconic landmarks of Paris including the Eiffel Tower, Louvre Museum, and more.",
                 tourImage = mutableListOf(listImage().get(0), listImage().get(1)),
                 tourPrice = 1000000.0,
-                salePrice = 900000.0,
+                saleId="sale_id_003",
                 success = 120,
                 cancel = 5,
-                countTour = "150",
-                star = "4.8",
-                countRating = "200",
+                countTour = 10,
+                star = 4.8,
+                countRating = 200,
                 tourTime = mutableListOf(
                     TourTime(
-                        timeID = "0",
+                        timeID = "tour_id_001_time_0",
                         "3 ngày hai đêm",
                         "09:00 02/06/2024",
                         "12:00 05/06/2024",
-                        1
+                        10
                     ),
                     TourTime(
-                        timeID = "1",
+                        timeID = "tour_id_001_time_1",
                         "3 ngày hai đêm",
                         "09:00 04/06/2024",
                         "12:00 07/06/2024",
-                        1
+                        10
                     ),
                     TourTime(
-                        timeID = "2",
-                        "3 ngày hai đêm", "09:00 08/06/2024", "12:00 11/06/2024", 1
+                        timeID = "tour_id_001_time_2",
+                        "3 ngày hai đêm", "09:00 08/06/2024", "12:00 11/06/2024", 10
                     ),
                 ),
-                tourAddress = "Paris, France",
-                tourCategory = mutableListOf(Category("Cultural"), Category("City Tour"))
+                tourAddress =createFamousPlaces().get(0).placeID,
+                vehicleId = getNewVehicle(context = appContext).get(0).vhId
             ), Tour(
                 tourID = "tour_id_002",
                 tourName = "Safari Adventure",
                 tourDescription = "Experience the thrill of a safari in the Serengeti with guided tours and luxury accommodation.",
                 tourImage = mutableListOf(listImage().get(2), listImage().get(3)),
                 tourPrice = 1000000.0,
-                salePrice = 900000.0,
+                saleId="sale_id_003",
                 success = 85,
                 cancel = 2,
-                countTour = "90",
-                star = "4.9",
-                countRating = "150",
+                countTour = 10,
+                star = 4.9,
+                countRating = 150,
                 tourTime = mutableListOf(
                     TourTime(
-                        timeID = "0",
-                        "3 ngày hai đêm", "09:00 02/06/2024", "12:00 05/06/2024", 1
+                        timeID = "tour_id_002_time_0",
+                        "3 ngày hai đêm", "09:00 02/06/2024", "12:00 05/06/2024", 10
                     ),
                     TourTime(
-                        timeID = "1",
-                        "3 ngày hai đêm", "09:00 04/06/2024", "12:00 07/06/2024", 1
+                        timeID = "tour_id_002_time_1",
+                        "3 ngày hai đêm", "09:00 04/06/2024", "12:00 07/06/2024", 10
                     ),
                     TourTime(
-                        timeID = "2",
-                        "3 ngày hai đêm", "09:00 08/06/2024", "12:00 11/06/2024", 1
+                        timeID = "tour_id_002_time_2",
+                        "3 ngày hai đêm", "09:00 08/06/2024", "12:00 11/06/2024", 10
                     ),
                 ),
-                tourAddress = "Serengeti, Tanzania",
-                tourCategory = mutableListOf(Category("Adventure"), Category("Wildlife"))
+                tourAddress = createFamousPlaces().get(0).placeID,
+                vehicleId = getNewVehicle(context = appContext).get(1).vhId
             ), Tour(
                 tourID = "tour_id_003",
                 tourName = "Tokyo Delights",
@@ -114,28 +118,28 @@ object RandomTour {
                     listImage().get(6)
                 ),
                 tourPrice = 1000000.0,
-                salePrice = 900000.0,
+                saleId="sale_id_003",
                 success = 200,
                 cancel = 10,
-                countTour = "220",
-                star = "4.7",
-                countRating = "250",
+                countTour = 10,
+                star = 4.7,
+                countRating = 250,
                 tourTime = mutableListOf(
                     TourTime(
-                        timeID = "0",
-                        "3 ngày hai đêm", "09:00 02/06/2024", "12:00 05/06/2024", 1
+                        timeID = "tour_id_003_time_0",
+                        "3 ngày hai đêm", "09:00 02/06/2024", "12:00 05/06/2024", 10
                     ),
                     TourTime(
-                        timeID = "1",
-                        "3 ngày hai đêm", "09:00 04/06/2024", "12:00 07/06/2024", 1
+                        timeID = "tour_id_003_time_1",
+                        "3 ngày hai đêm", "09:00 04/06/2024", "12:00 07/06/2024", 10
                     ),
                     TourTime(
-                        timeID = "2",
-                        "3 ngày hai đêm", "09:00 08/06/2024", "12:00 11/06/2024", 1
+                        timeID = "tour_id_003_time_2",
+                        "3 ngày hai đêm", "09:00 08/06/2024", "12:00 11/06/2024", 10
                     ),
                 ),
-                tourAddress = "Tokyo, Japan",
-                tourCategory = mutableListOf(Category("Cultural"), Category("Gastronomy"))
+                tourAddress = createFamousPlaces().get(3).placeID,
+                vehicleId = getNewVehicle(context = appContext).get(2).vhId
             )
         )
     }

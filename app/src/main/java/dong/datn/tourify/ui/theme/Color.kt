@@ -140,7 +140,7 @@ val black = Color(0xFF000000)
 val iconBackground = Color(0xFF141414)
 
 
-val selectedColor = if (currentTheme == 1) appColor else white
+val selectedColor = if (currentTheme == 1) appColor else appColor
 val unselectedColor = if (currentTheme == 1) gray else lightGrey
 
 

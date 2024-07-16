@@ -76,6 +76,11 @@ fun hasInternetConnection(context: Context): Boolean {
     }
 }
 
+var percentDeposit: Float  get() = sharedPreferences.getFloat("percentDeposit",0.4f)
+    set(value) {
+        sharedPreferences.putFloat("percentDeposit", value)
+    }
+
 
 
 
