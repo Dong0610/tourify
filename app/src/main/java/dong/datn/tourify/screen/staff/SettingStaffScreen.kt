@@ -108,7 +108,6 @@ fun SettingStaffScreen(nav: NavController, viewModels: AppViewModel) {
                     font = Font(R.font.poppins_regular),
                     textAlign = TextAlign.Start
                 )
-
                 Spacer(modifier = Modifier.weight(1f))
                 SwitchThemeValue(context)
 

@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,17 +24,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowLeft
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -63,10 +56,12 @@ import com.google.accompanist.pager.rememberPagerState
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.app.ContextProvider.Companion.viewModel
+import dong.datn.tourify.app.appContext
 import dong.datn.tourify.app.authSignIn
 import dong.datn.tourify.firebase.Firestore
 import dong.datn.tourify.model.Order
 import dong.datn.tourify.model.OrderStatus
+import dong.datn.tourify.screen.staff.BottomSheetView
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.getTimeBeforeHours
 import dong.datn.tourify.ui.theme.gold
@@ -75,6 +70,7 @@ import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.transparent
 import dong.datn.tourify.ui.theme.unselectedColor
 import dong.datn.tourify.ui.theme.white
+import dong.datn.tourify.utils.CallbackType
 import dong.datn.tourify.utils.ORDER
 import dong.datn.tourify.utils.SpaceH
 import dong.datn.tourify.utils.SpaceW
@@ -82,17 +78,17 @@ import dong.datn.tourify.utils.TOUR
 import dong.datn.tourify.utils.opacity
 import dong.datn.tourify.utils.toCurrency
 import dong.datn.tourify.utils.widthPercent
+import dong.datn.tourify.widget.ButtonNext2
 import dong.datn.tourify.widget.IconView
 import dong.datn.tourify.widget.RoundedImage
 import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.ViewParent
 import dong.datn.tourify.widget.navigationTo
 import dong.datn.tourify.widget.onClick
+import dong.duan.ecommerce.library.showToast
+import dong.duan.livechat.widget.InputValue
 import dong.duan.travelapp.model.Tour
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -261,11 +257,12 @@ fun LoadFinishData(value: MutableList<Order>, nav: NavController) {
         LazyColumn(Modifier.fillMaxSize()) {
             items(value) {
                 OrderUpComingData(it, { url ->
+                    viewModel.currentImage.value = url
                     nav.navigationTo(
                         ClientScreen.DetailImageScreen.route,
                         ClientScreen.BookingScreen.route
                     )
-                    viewModel.currentImage.value = url
+
                 }, {
                     Firestore.fetchById<Tour>("$TOUR/${it.tourID}") { tour ->
                         viewModel.detailTour.value = tour
@@ -275,9 +272,7 @@ fun LoadFinishData(value: MutableList<Order>, nav: NavController) {
                                 ClientScreen.BookingScreen.route
                             )
                         }
-
                     }
-
                 })
             }
         }
@@ -288,6 +283,12 @@ fun LoadFinishData(value: MutableList<Order>, nav: NavController) {
 
 @Composable
 fun LoadUpComingData(value: MutableList<Order>, nav: NavController) {
+    val isBotomSheet = remember {
+        mutableStateOf(false)
+    }
+    val currentOrder = remember {
+        mutableStateOf<Order?>(null)
+    }
     Column(Modifier.fillMaxSize()) {
         LazyColumn(Modifier.fillMaxSize()) {
             items(value) {
@@ -297,14 +298,68 @@ fun LoadUpComingData(value: MutableList<Order>, nav: NavController) {
                         ClientScreen.BookingScreen.route
                     )
                     viewModel.currentImage.value = url
-                }, {})
+                }, {
+                    if (it.orderStatus == OrderStatus.PENDING) {
+                        isBotomSheet.value = true
+                        currentOrder.value = it
+                    }
+                })
             }
         }
+    }
+
+    if (isBotomSheet.value) {
+        LocalFocusManager.current.clearFocus()
+        BottomSheetView(state = { isBotomSheet.value = false }) {
+            EnterCancelReson(currentOrder.value){ text, order->
+                isBotomSheet.value=false
+                viewModel.cancelOrder(text,order){
+                    viewModel.showDialog(appContext.getString(R.string.success),CallbackType.SUCCESS, appContext.getString(R.string.to_cancel_success))
+                }
+            }
+        }
+    }
+
+}
+
+@Composable
+fun EnterCancelReson(value: Order?,callback: (String,Order)->Unit) {
+    val context = LocalContext.current
+
+    val cancelReason = remember { mutableStateOf("") }
+    Column(Modifier.padding(12.dp)) {
+        TextView(
+            text = R.string.cancel_reason,
+            modifier = Modifier,
+            color = appColor,
+            font = Font(R.font.poppins_semibold),
+            textSize = 18
+        )
+        SpaceH(h = 16)
+        InputValue(value = cancelReason.value) {
+            cancelReason.value = it
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        ButtonNext2(text = context.getString(R.string.confirm), modifier = Modifier) {
+            if(cancelReason.value.isEmpty()){
+                showToast("Reason is not empty")
+            }
+            else{
+                callback(cancelReason.value,value!!)
+            }
+        }
+
     }
 }
 
 @Composable
 fun LoadAllData(value: MutableList<Order>, nav: NavController) {
+    val isBotomSheet = remember {
+        mutableStateOf(false)
+    }
+    val currentOrder = remember {
+        mutableStateOf<Order?>(null)
+    }
     Column(Modifier.fillMaxSize()) {
         LazyColumn(Modifier.fillMaxSize()) {
             items(value) {
@@ -327,8 +382,24 @@ fun LoadAllData(value: MutableList<Order>, nav: NavController) {
 
                         }
                     }
+                    else if(it.orderStatus==OrderStatus.PENDING){
+                        isBotomSheet.value = true
+                        currentOrder.value=it
+                    }
 
                 })
+            }
+        }
+    }
+
+    if (isBotomSheet.value) {
+        LocalFocusManager.current.clearFocus()
+        BottomSheetView(state = { isBotomSheet.value = false }) {
+            EnterCancelReson(currentOrder.value){ text, order->
+                isBotomSheet.value=false
+                viewModel.cancelOrder(text,order){
+                    viewModel.showDialog(appContext.getString(R.string.success),CallbackType.SUCCESS, appContext.getString(R.string.to_cancel_success))
+                }
             }
         }
     }
@@ -358,6 +429,7 @@ fun OrderUpComingData(it: Order, onViewOrder: (String) -> Unit, onItemClick: (Or
         OrderStatus.RUNNING -> Color(0xFF2196F3)
         OrderStatus.FINISH -> Color(0xff4caf50)
         OrderStatus.CANCELED -> Color(0xfff44336)
+        OrderStatus.WAITING -> Color(0xFF0BFFCE)
     }
     Box(
         modifier = Modifier
@@ -621,6 +693,35 @@ fun OrderUpComingData(it: Order, onViewOrder: (String) -> Unit, onItemClick: (Or
                                     brush = Brush.horizontalGradient(
                                         colors = listOf(
                                             Color(0xFFF9A825), Color(0xFFFF4500)
+                                        )
+                                    ), shape = RoundedCornerShape(12.dp)
+
+                                )
+                                .defaultMinSize(minWidth = 80.dp)
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                fontSize = 14.sp,
+                                text = context.getString(R.string.detail),
+                                fontFamily = FontFamily(Font(R.font.poppins_medium)),
+                                color = white
+                            )
+                            Box(modifier = Modifier
+                                .matchParentSize()
+                                .onClick { onItemClick.invoke(it) })
+                        }
+                    }
+
+                    OrderStatus.WAITING
+
+                    -> {
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    brush = Brush.horizontalGradient(
+                                        colors = listOf(
+                                            Color(0xFF3F51B5), Color(0xFF2196F3)
                                         )
                                     ), shape = RoundedCornerShape(12.dp)
 

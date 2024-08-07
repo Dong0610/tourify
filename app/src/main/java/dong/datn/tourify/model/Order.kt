@@ -15,6 +15,7 @@ enum class OrderStatus {
     PAID,
     RUNNING,
     CANCELED, FINISH,
+    WAITING
 }
 enum class PaymentStatus {
     PREPAYMENT,
@@ -39,6 +40,7 @@ class Order(
     var note: String = "",
     var adultCount: Int = 0,
     var childCount: Int = 0,
+    var tollder: Int = 0,
     var invoiceUrl: String = "",
     var paymentMethod: PaymentMethod =  PaymentMethod(),
     var orderStatus: OrderStatus =  OrderStatus.PENDING,

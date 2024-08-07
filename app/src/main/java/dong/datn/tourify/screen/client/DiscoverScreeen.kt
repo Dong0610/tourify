@@ -1,6 +1,7 @@
 package dong.datn.tourify.screen.client
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,16 +27,21 @@ import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -44,9 +51,12 @@ import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.app.database
 import dong.datn.tourify.app.viewModels
+import dong.datn.tourify.firebase.Firestore
+import dong.datn.tourify.model.Places
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.black
 import dong.datn.tourify.ui.theme.darkGray
+import dong.datn.tourify.ui.theme.gray
 import dong.datn.tourify.ui.theme.iconBackground
 import dong.datn.tourify.ui.theme.lightGrey
 import dong.datn.tourify.ui.theme.red
@@ -63,26 +73,25 @@ import dong.datn.tourify.widget.onClick
 import dong.duan.livechat.widget.SearchBox
 import dong.duan.travelapp.model.Tour
 import kotlinx.coroutines.launch
-
 @SuppressLint("UnrememberedMutableState", "MutableCollectionMutableState")
 @Composable
 fun DiscoverScreen(navController: NavHostController, viewModels: AppViewModel) {
     val context = LocalContext.current
     val listCurrent = viewModels.listTour
-    val listSearch = remember {
-        mutableStateOf(viewModels.listTour.value)
-    }
+    val listSearch = remember { mutableStateOf(listCurrent.value) }
+    val placeNameMap = remember { mutableStateMapOf<String, String>() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     ViewParent(onBack = {
         viewModels.currentIndex.value = 0
         navController.navigate(ClientScreen.HomeClientScreen.route) {
             popUpTo(0)
         }
-
     }) {
         Column {
             Row(
                 Modifier
-                    .fillMaxWidth(1f)
+                    .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -97,7 +106,6 @@ fun DiscoverScreen(navController: NavHostController, viewModels: AppViewModel) {
                     appColor, font = Font(R.font.poppins_semibold), textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.width(56.dp))
-
             }
 
             Spacer(
@@ -117,16 +125,16 @@ fun DiscoverScreen(navController: NavHostController, viewModels: AppViewModel) {
                         listSearch.value = listCurrent.value
                     }
                 }, {
+                    keyboardController?.hide()
                     listSearch.value = if (it.isEmpty()) {
                         listCurrent.value
                     } else {
-                        listCurrent.value.filter { item ->
-                            item.tourName.contains(
-                                it,
-                                ignoreCase = true
-                            )
+                        listCurrent.value.filter { tour ->
+                            tour.tourName.contains(it, ignoreCase = true) ||
+                                    placeNameMap[tour.tourAddress]?.contains(it, ignoreCase = true) == true
                         }.toMutableList()
                     }
+                    Log.d("Search", "$placeNameMap")
                 })
             }
             Spacer(modifier = Modifier.height(6.dp))
@@ -141,36 +149,53 @@ fun DiscoverScreen(navController: NavHostController, viewModels: AppViewModel) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 content = {
-                    this.itemsIndexed(listSearch.value) { index, it ->
-                        ItemDiscover(it) {
+                    listSearch.value.forEach { tour ->
+                        Firestore.fetchById<Places>("PLACES/${tour.tourAddress}") {
+                            if (it != null) {
+                                placeNameMap[tour.tourAddress] = it.placeName
+                            }
+                        }
+                    }
+                   this.items(listSearch.value) { tour ->
+                        val placeName = placeNameMap[tour.tourAddress] ?: ""
+                        ItemDiscover(tour, placeName) {
                             viewModels.detailTour.value = it
-                            navController.navigationTo(ClientScreen.DetailTourScreen.route,ClientScreen.DiscoveryScreen.route)
+                            navController.navigationTo(ClientScreen.DetailTourScreen.route, ClientScreen.DiscoveryScreen.route)
                         }
                     }
                 }
             )
         }
-
-
     }
 }
 
+
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun ItemDiscover(tour: Tour, onSelect: (Tour) -> Unit) {
+fun ItemDiscover(tour: Tour, places: String, onSelect: (Tour) -> Unit) {
     val coroutineScope = rememberCoroutineScope()
     val loveState = remember {
         mutableStateOf(false)
     }
 
-    coroutineScope.launch {
-        loveState.value= database.loveDao().doesItemExist(tour.tourID)
+    val salePrice = remember {
+        mutableStateOf(0.0)
     }
+
+    coroutineScope.launch {
+        salePrice.value = salePriceByTour(tour)
+        loveState.value = database.loveDao().doesItemExist(tour.tourID)
+
+
+    }
+
+
+
     Box(
         Modifier
             .border(width = 1.dp, color = lightGrey, shape = RoundedCornerShape(12.dp))
             .background(if (currentTheme == 1) white else iconBackground)
-            .heightPercent(30f)
+            .heightPercent(34f)
             .clip(RoundedCornerShape(12.dp)), contentAlignment = Alignment.TopEnd
 
     ) {
@@ -192,19 +217,34 @@ fun ItemDiscover(tour: Tour, onSelect: (Tour) -> Unit) {
                 text = tour.tourName,
                 maxLine = 2,
                 modifier = Modifier,
+                textSize = 15,
                 font = Font(R.font.poppins_medium)
             )
             Spacer(modifier = Modifier.weight(1f))
-            Row(Modifier.fillMaxWidth()) {
                 TextView(
-                    text = tour.tourPrice.toCurrency() ,
-                    modifier = Modifier,
+                    text = salePrice.value.toCurrency(),
+                    modifier = Modifier.drawBehind {
+                        val strokeWidthPx = 1.dp.toPx()
+                        val verticalOffset = size.height / 2
+                        drawLine(
+                            color = gray,
+                            strokeWidth = strokeWidthPx,
+                            start = Offset(0f, verticalOffset),
+                            end = Offset(size.width, verticalOffset)
+                        )
+                    },
+                    textSize = 14,
                     font = Font(R.font.poppins_medium),
                     color = Color.Red
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                TextView(text = tour.tourPrice.toCurrency(), modifier = Modifier, font = Font(R.font.poppins_medium))
-            }
+            TextView(
+                text = tour.tourPrice.toCurrency(),
+                modifier = Modifier,
+                font = Font(R.font.poppins_medium),
+                textSize = 14
+            )
+
             Spacer(modifier = Modifier.height(2.dp))
 
             Row(Modifier.fillMaxWidth(1f)) {
@@ -216,7 +256,8 @@ fun ItemDiscover(tour: Tour, onSelect: (Tour) -> Unit) {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 TextView(
-                    text = tour.tourAddress,
+                    text = places,
+                    textSize = 14,
                     modifier = Modifier,
                     font = Font(R.font.poppins_medium),
                     color = lightGrey
@@ -224,9 +265,12 @@ fun ItemDiscover(tour: Tour, onSelect: (Tour) -> Unit) {
             }
 
         }
-        Box(Modifier.matchParentSize().onClick {
-            onSelect.invoke(tour)
-        })
+        Box(
+            Modifier
+                .matchParentSize()
+                .onClick {
+                    onSelect.invoke(tour)
+                })
         InnerImageIcon(
             modifier = Modifier
                 .size(32.dp),

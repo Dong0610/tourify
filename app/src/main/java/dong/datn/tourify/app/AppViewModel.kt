@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.ChildEventListener
@@ -26,6 +27,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dong.datn.tourify.R
 import dong.datn.tourify.database.LoveItem
 import dong.datn.tourify.database.LoveItemRemote
+import dong.datn.tourify.database.OrderTime
 import dong.datn.tourify.firebase.Firestore
 import dong.datn.tourify.firebase.RealTime
 import dong.datn.tourify.firebase.putImgToStorage
@@ -43,6 +45,7 @@ import dong.datn.tourify.model.Places
 import dong.datn.tourify.model.Reply
 import dong.datn.tourify.model.Sale
 import dong.datn.tourify.screen.client.ClientScreen
+import dong.datn.tourify.screen.staff.ChartData
 import dong.datn.tourify.screen.start.AccountScreen
 import dong.datn.tourify.utils.CHAT
 import dong.datn.tourify.utils.COMMENT
@@ -52,11 +55,13 @@ import dong.datn.tourify.utils.LOVE
 import dong.datn.tourify.utils.MailSender
 import dong.datn.tourify.utils.NOTIFICATION
 import dong.datn.tourify.utils.ORDER
+import dong.datn.tourify.utils.SALES
 import dong.datn.tourify.utils.SCHEDULE
 import dong.datn.tourify.utils.SERVICE
 import dong.datn.tourify.utils.TOUR
 import dong.datn.tourify.utils.USERS
 import dong.datn.tourify.utils.timeNow
+import dong.datn.tourify.utils.toCurrency
 import dong.datn.tourify.widget.navigationTo
 import dong.duan.ecommerce.library.showToast
 import dong.duan.livechat.utility.generateNumericOTP
@@ -72,7 +77,11 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 
@@ -112,17 +121,10 @@ class AppViewModel @Inject constructor() : ViewModel() {
     val storage = Firebase.storage
 
     val bookingTourNow = mutableStateOf<Tour?>(null)
-    val tourTimeSelected = mutableStateOf(
-        TourTime(
-            timeID = "0",
-            "3 ngày hai đêm",
-            "09:00 02/06/2024",
-            "12:00 05/06/2024",
-            1
-        ),
-    )
+    val tourTimeSelected = mutableStateOf<TourTime?>(null)
     val countChild =
         mutableStateOf(0)
+    val countToddle= mutableStateOf(0)
     val countAdult =
         mutableStateOf(0)
     val totalPrice =
@@ -773,6 +775,11 @@ class AppViewModel @Inject constructor() : ViewModel() {
         mutableStateOf("")
     val salePrice = mutableStateOf(0.0)
 
+    private fun extractNumber(input: String): Int? {
+        val regex = Regex("_(\\d+)$")
+        val matchResult = regex.find(input)
+        return matchResult?.groups?.get(1)?.value?.toInt()
+    }
     fun creteOrderByTour(
         tour: Tour,
         note: String,
@@ -804,16 +811,16 @@ class AppViewModel @Inject constructor() : ViewModel() {
             cancelDate = "",
             cancelBefore = "",
         )
+
+        val count =
+            tourTime.count - (currentOrder.value!!.adultCount + currentOrder.value!!.childCount)
         Firestore.pushAsync<Order>("$ORDER")
             .withId {
                 currentOrder.value?.orderID = it
             }
             .set(currentOrder.value!!)
             .finish {
-                Firestore.updateAsync("$TOUR/${tour.tourID}", hashMapOf<String, Any>().apply {
-                    put("countTour", tour.countTour - 1)
-                })
-
+                updateCountInTourTime(currentOrder.value!!.tourID, tourTime.timeID, count)
                 pushNewNotification(
                     "Successful tour booking",
                     "https://firebasestorage.googleapis.com/v0/b/travelapp-datn.appspot.com/o/OTHER%2Fimge_push.png?alt=media&token=50f72c11-6462-4fd0-b7c4-65bd80a75b32",
@@ -827,11 +834,44 @@ class AppViewModel @Inject constructor() : ViewModel() {
                     function.invoke(CallbackType.SUCCESS, currentOrder.value!!.orderID, it)
                 }
 
+
             }
             .error {
                 function(CallbackType.ERROR, "", Notification())
             }.execute()
     }
+
+    fun updateCountInTourTime(documentId: String, timeID: String, newCount: Int) {
+        val firestore = FirebaseFirestore.getInstance()
+        val documentRef = firestore.collection("$TOUR").document(documentId)
+        documentRef.get()
+            .addOnSuccessListener { document ->
+                if (document != null) {
+                    val tourTime = document.get("tourTime") as? List<Map<String, Any>>
+                        ?: return@addOnSuccessListener
+                    val updatedTourTime = tourTime.map {
+                        if (it["timeID"] == timeID) {
+                            it.toMutableMap().apply { put("count", newCount) }
+                        } else {
+                            it
+                        }
+                    }
+                    documentRef.update("tourTime", updatedTourTime)
+                        .addOnSuccessListener {
+                            Log.d("UpdateDoc", "Document successfully updated!")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.d("UpdateDoc", "Error updating document: ${e.message}")
+                        }
+                } else {
+                    Log.d("UpdateDoc", "Document not found")
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.d("UpdateDoc", "Error getting document: ${e.message}")
+            }
+    }
+
 
 
     val dialogState = mutableStateOf(false)
@@ -996,7 +1036,305 @@ class AppViewModel @Inject constructor() : ViewModel() {
             {})
     }
 
+
     val listOrders = mutableStateOf<MutableList<Order>>(mutableListOf())
+
+
+    val listTourStaff = mutableStateOf<MutableList<Tour>>(mutableListOf())
+    val listAllOrder = mutableStateOf(mutableListOf<Order>())
+    val ordersByMonth = mutableStateOf(mutableListOf<ChartData>())
+    val listPlaces = mutableStateOf(mutableListOf<Places>())
+    val listSalesManager = mutableStateOf(mutableListOf<Sale>())
+    var currentSale = mutableStateOf<Sale?>(null)
+
+
+    val titleScreen = mutableStateOf("")
+
+    private fun pushImageTour(
+        imageData: MutableList<Any?>, tourID: String, callback: (MutableList<String>) -> Unit
+    ) {
+        imageData.remove(null)
+        val listUrl = mutableListOf<String>()
+        for (i in 0 until imageData.size) {
+            val reference = FirebaseStorage.getInstance().getReference("Comment/$tourID")
+
+            reference.putImgToStorage(appContext, imageData.get(i) as Uri) {
+                listUrl.add(it.toString())
+                if (listUrl.size == imageData.size) {
+                    callback.invoke(listUrl)
+                }
+            }
+        }
+    }
+
+    fun createNewTour(tour: Tour, listImage: MutableList<Any?>, function: (Int, Tour?) -> Unit) {
+        listImage.toMutableList().apply {
+            remove(null)
+        }
+        val docRef = FirebaseFirestore.getInstance().collection("$TOUR").document()
+        val newId = docRef.id
+        pushImageTour(listImage, newId) { imae ->
+            tour.tourID = newId
+            tour.tourImage = imae
+            docRef.set(tour).addOnSuccessListener {
+                function(1, tour)
+            }.addOnFailureListener {
+                function(-1, null)
+            }
+
+        }
+
+    }
+
+    fun createService(service: Service, tourID: String, function: (Int) -> Unit) {
+        FirebaseDatabase.getInstance().getReference("$SERVICE").child(tourID).setValue(service)
+            .addOnSuccessListener {
+                function(1)
+            }.addOnFailureListener {
+                function(-1)
+            }
+    }
+
+    fun createSchedule(schedule: Schedule, tourID: String, function: (Int) -> Unit) {
+        FirebaseDatabase.getInstance().getReference("$SCHEDULE").child(tourID).setValue(schedule)
+            .addOnSuccessListener {
+                function(2)
+            }.addOnFailureListener {
+                function(-1)
+            }
+    }
+
+    fun saveNewSales(sales: Sale, image: Any?, callback: (Int, Sale?) -> Unit) {
+        val docRef = FirebaseFirestore.getInstance().collection("$SALES").document()
+        val newId = docRef.id
+        val listImage = mutableListOf(image)
+        pushImageTour(listImage, newId) { imae ->
+            sales.saleId = newId
+            sales.saleImage = imae.get(0)
+            docRef.set(sales).addOnSuccessListener {
+                callback(1, sales)
+            }.addOnFailureListener {
+                callback(-1, null)
+            }
+
+        }
+    }
+
+
+    fun isCurrentDateTimeAfter(targetDateTimeString: String): Boolean {
+        val formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")
+        val targetDateTime = LocalDateTime.parse(targetDateTimeString, formatter)
+        val currentDateTime = LocalDateTime.now()
+        return currentDateTime.isAfter(targetDateTime)
+    }
+
+
+    fun loadStatus(authSignIn: Users?) {
+        viewModelScope.launch {
+            try {
+                val querySnapshot = FirebaseFirestore.getInstance().collection(ORDER).get().await()
+
+                if (querySnapshot.isEmpty) return@launch
+
+                querySnapshot.documents.forEach { document ->
+                    val order =
+                        document.toObject(Order::class.java) // Convert to your Order data class
+                    if (order != null && order.orderStatus == OrderStatus.PENDING && order.userOrderId == dong.datn.tourify.app.authSignIn?.UId) {
+                        withContext(Dispatchers.IO) {
+                            val exists = database.orderTimeDao().doesItemExist(order.orderID)
+                            if (!isCurrentDateTimeAfter(order.tourTime.endTime) && order.orderStatus == OrderStatus.PENDING) {
+                                Firestore.updateAsync("$ORDER/${order.orderID}",
+                                    hashMapOf<String, Any>().apply {
+                                        put("orderStatus", OrderStatus.FINISH.toString())
+                                    })
+                            }
+                            if (exists) {
+                                database.orderTimeDao().updateStatus(
+                                    orderId = order.orderID,
+                                    status = order.orderStatus.toString(),
+                                    startTime = order.tourTime.startTime,
+                                    endTime = order.tourTime.endTime
+                                )
+                            } else {
+                                database.orderTimeDao().insertItem(
+                                    OrderTime(
+                                        orderId = order.orderID,
+                                        status = order.orderStatus.toString(),
+                                        startTime = order.tourTime.startTime,
+                                        endTime = order.tourTime.endTime,
+                                        tourId = order.tourID
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+
+                e.printStackTrace()
+            }
+        }
+
+    }
+
+    @SuppressLint("SuspiciousIndentation")
+    fun sendMailOrder(id: String, url: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            Firestore.fetchById<Order>("$ORDER/$id") {
+                it?.let { order ->
+                    val data = hashMapOf(
+                        "orderId" to order.orderID,
+                        "childCount" to order.childCount,
+                        "adultCount" to order.adultCount,
+                        "tourName" to order.tourName,
+                        "tourTime" to order.tourTime.toString(),
+                        "price" to order.totalPrice,
+                        "payment" to order.paymentMethod.toString(),
+                        "note" to order.note,
+                        "url" to url
+                    )
+                    val emailContent = """
+                                    Order Details
+                                
+                                    Tour Name: ${data["tourName"]}
+                                    Order ID: ${data["orderId"]}
+                                    Tour Time: From ${order.tourTime.startTime} to ${order.tourTime.endTime}
+                                    Price: ${data["price"]}
+                                    Note: ${data["note"]}
+                        
+                                """.trimIndent()
+                    MailSender.to("bdong0610@gmail.com").subject("Booking tour success")
+                        .body(emailContent).success {
+                            Log.d("Mail", "$emailContent")
+                        }.fail {
+                            showToast(appContext.getString(R.string.send_code_faild))
+                        }.send()
+                }
+            }
+        }
+    }
+
+    fun calculateNewTimes(oldStart: String, oldEnd: String): Pair<String, String> {
+        val format = "HH:mm dd/MM/yyyy"
+        Log.d("ValueUpdate", "Using format: $format")
+        val formatter = DateTimeFormatter.ofPattern(format)
+
+        try {
+            val oldStartTime = LocalDateTime.parse(oldStart, formatter)
+            val oldEndTime = LocalDateTime.parse(oldEnd, formatter)
+            val durationBetweenOldTimes = ChronoUnit.MINUTES.between(oldStartTime, oldEndTime)
+            val now = LocalDateTime.now()
+            val newStartTime =
+                now.plusDays(3).withHour(oldStartTime.hour).withMinute(oldStartTime.minute)
+                    .withSecond(oldStartTime.second)
+            val newEndTime =
+                newStartTime.plusMinutes(durationBetweenOldTimes).withHour(oldStartTime.hour)
+                    .withMinute(oldStartTime.minute)
+                    .withSecond(oldStartTime.second)
+            val newStartTimeStr = newStartTime.format(formatter)
+            val newEndTimeStr = newEndTime.format(formatter)
+            return Pair(newStartTimeStr, newEndTimeStr)
+        } catch (e: Exception) {
+            Log.e("ValueUpdate", "Error calculating new times: ${e.message}")
+            throw e
+        }
+    }
+
+
+    fun updateTourTimes(
+        tourTimes: MutableList<TourTime>, callback: (MutableList<TourTime>) -> Unit
+    ) {
+        Log.d("ValueUpdate", "\nData: ${tourTimes.toJson()}")
+        val formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")
+
+        tourTimes.forEachIndexed { _, tourTime ->
+
+            val (newStartTime, newEndTime) = calculateNewTimes(
+                tourTime.startTime, tourTime.endTime
+            )
+            tourTime.startTime = newStartTime
+            tourTime.endTime = newEndTime
+        }
+        callback.invoke(tourTimes)
+    }
+
+    fun updateTourTimeData(it: MutableList<Tour>?) {
+
+        Log.d("update", "Tour Time ${it.toJson()} updated")
+        if (it?.size != 0 && it != null) {
+            it.forEachIndexed { index, tour ->
+                val listTimeNew = tour.tourTime
+                updateTourTimes(listTimeNew) { data ->
+                    Log.d("update", "Tour Time ${data.toJson()} updated")
+                    FirebaseFirestore.getInstance().collection("$TOUR").document(tour.tourID)
+                        .update(hashMapOf<String?, Any?>().apply {
+                            put("tourTime", data)
+                        }).addOnSuccessListener {
+                            Log.d("update", "updateTourTime successfully")
+                        }.addOnFailureListener {
+                            showToast(it.message.toString())
+                        }
+                }
+            }
+        }
+
+    }
+
+    fun confirmCancelOrder(order: Order, nav: Tour, callback: (Boolean) -> Unit) {
+        val countData = mutableStateOf(0)
+
+
+        Firestore.fetchById<Tour>("$TOUR/${order.tourID}") {
+            Log.d("TestData", "$TOUR/${order.tourID} , data : ${it?.tourTime.toJson()}")
+            it?.tourTime?.forEach {
+                if (extractNumber(it.timeID).toString() == order.tourTime.timeID) {
+                    countData.value = it.count
+                }
+            }
+        }
+
+
+
+        FirebaseFirestore.getInstance().collection("$ORDER").document(order.orderID)
+            .update(hashMapOf<String, Any?>().apply {
+                put("orderStatus", OrderStatus.CANCELED.toString())
+            }).addOnSuccessListener {
+                MailSender.to("bdong0610@gmail.com").subject("Order canceled")
+                    .body("Your order has been canceled by id ${order.orderID} with tour \"${nav.tourName}\". We have refunded your order with ${order.prePayment.toCurrency()}")
+                    .success {
+
+                    }.fail { }
+                    .send()
+                callback.invoke(true)
+                pushNewNotification(
+                    title = "Order canceled",
+                    image = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTPELEX6ylJucNrA3W8SEAHLD8f5DFyky6UsA&s",
+                    senderId = "",
+                    reciveId = order.userOrderId,
+                    content = "Your order has been canceled by id ${order.orderID} with tour \"${nav.tourName}\". We have refunded your order with ${order.prePayment.toCurrency()}",
+                    type = "COMMON",
+                    link = "",
+                    router = ""
+                )
+                val count = (countData.value + order.childCount + order.adultCount)
+                updateCountInTourTime(order.tourID, order.tourTime.timeID, count)
+            }
+            .addOnFailureListener {
+                showToast(it.message.toString())
+                callback.invoke(false)
+            }
+    }
+
+
+    fun cancelOrder(value: String, orderID: Order, callback: (Boolean) -> Unit) {
+        Firestore.updateAsync("$ORDER/${orderID.orderID}", hashMapOf<String, Any>().apply {
+            put("orderStatus", OrderStatus.WAITING.toString())
+            put("cancelDate", timeNow())
+            put("cancelReason", value)
+        }, {
+            callback(true)
+        }, { callback(false) })
+    }
 
 
 }

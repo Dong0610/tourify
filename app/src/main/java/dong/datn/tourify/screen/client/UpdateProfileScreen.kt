@@ -9,9 +9,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -90,7 +93,10 @@ fun UpdateProfileScreen(nav: NavController, viewModels: AppViewModel) {
             restoreState = true
         }
     }) {
-        Column(Modifier.fillMaxSize()) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(WindowInsets.ime.asPaddingValues())) {
             Row(
                 Modifier
                     .fillMaxWidth(1f)
@@ -262,6 +268,10 @@ fun DropdownMenuBoxSex(modifier: Modifier,calback:(String)->Unit) {
         contentAlignment = Alignment.CenterStart
     ) {
         ExposedDropdownMenuBox(
+            modifier = Modifier.background(
+                color = if (currentTheme == 1) whiteSmoke else lightGrey,
+                shape = RoundedCornerShape(12.dp)
+            ),
             expanded = expanded.value,
             onExpandedChange = {
                 expanded.value = !expanded.value
@@ -298,7 +308,6 @@ fun DropdownMenuBoxSex(modifier: Modifier,calback:(String)->Unit) {
     }
 }
 
-
 @Composable
 fun DatePickerBox(modifier: Modifier, callback: (String) -> Unit) {
     val context = LocalContext.current
@@ -310,10 +319,12 @@ fun DatePickerBox(modifier: Modifier, callback: (String) -> Unit) {
     val selectedDate = remember { mutableStateOf("") }
     val datePickerDialog = remember {
         android.app.DatePickerDialog(context, { _, selectedYear, selectedMonth, selectedDay ->
-            val formattedDate = "$selectedDay/${selectedMonth + 1}/$selectedYear"
+            val formattedDate = String.format("%02d/%02d/%d", selectedDay, selectedMonth + 1, selectedYear)
             selectedDate.value = formattedDate
             callback.invoke(formattedDate)
-        }, year, month, day)
+        }, year, month, day).apply {
+            datePicker.maxDate = calendar.timeInMillis // This sets the maximum date to today
+        }
     }
 
     Box(
@@ -336,3 +347,19 @@ fun DatePickerBox(modifier: Modifier, callback: (String) -> Unit) {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

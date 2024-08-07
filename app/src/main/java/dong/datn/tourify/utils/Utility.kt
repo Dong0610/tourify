@@ -190,6 +190,7 @@ fun DialogState(callbackType: CallbackType) {
                 TextView(
                     text = viewModels.dialogMessage.value,
                     modifier = Modifier,
+                    maxLine = 100,
                     textSize = 18,
                     font = Font(R.font.poppins_regular)
                 )
@@ -214,6 +215,13 @@ fun DialogState(callbackType: CallbackType) {
                                 color = white,
                                 fontFamily = FontFamily(Font(R.font.poppins_medium))
                             )
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .onClick {
+                                        viewModels.dialogState.value = false
+                                        viewModels.dialogCallback?.invoke()
+                                    })
                         }
 
                     }

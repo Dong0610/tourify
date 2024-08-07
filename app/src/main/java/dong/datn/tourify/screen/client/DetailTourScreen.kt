@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -317,13 +316,16 @@ fun DetailTourScreen(nav: NavController, viewModel: AppViewModel, router: String
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
+
                     ButtonNext(
                         text = context.getString(R.string.booking_now),
+                        isEnable = true,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     ) {
                         nav.navigationTo(ClientScreen.BookingNowScreen.route)
                         viewModel.bookingTourNow.value = tour
                     }
+
 
                     Column(
                         Modifier
@@ -749,7 +751,6 @@ fun BottomSheetReply(
         shape = RoundedCornerShape(12.dp, 12.dp, 0.dp, 0.dp),
         dragHandle = { BottomSheetDefaults.DragHandle() },
         scrimColor = Color.Black.copy(alpha = .5f),
-        windowInsets = WindowInsets(0, 0, 0, 0)
     )
     {
         Column(
@@ -865,7 +866,7 @@ fun StyledText(
         withStyle(style = SpanStyle(color = if (currentTheme == 1) Color.Red else whiteSmoke)) {
             append(data.Time.toString().replace(" ", ""))
         }
-        append(": ${data.Content}")
+        append(data.Content)
     }
 
     TextView(

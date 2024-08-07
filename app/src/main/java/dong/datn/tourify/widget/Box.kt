@@ -152,6 +152,20 @@ fun HorScrollView(content: @Composable BoxScope.() -> Unit) {
         }
     }
 }
+@Composable
+fun HorScrollView(modifier: Modifier=Modifier,content: @Composable BoxScope.() -> Unit) {
+
+    val scrollState = rememberScrollState()
+    val coroutineScope = rememberCoroutineScope()
+    val keyboardHeight = WindowInsets.ime.getBottom(LocalDensity.current)
+
+    LaunchedEffect(key1 = keyboardHeight) {
+        coroutineScope.launch {
+            scrollState.scrollBy(keyboardHeight.toFloat())
+        }
+    }
+    Box(modifier.horizontalScroll(scrollState),content=content)
+}
 
 @Composable
 fun VerScrollView(content: @Composable BoxScope.() -> Unit) {
@@ -267,6 +281,7 @@ fun IconView(
                 tint = tint
             )
 
+
             else -> {
                 FaIcon(
                     item as FaIconType.BrandIcon,
@@ -340,7 +355,7 @@ fun IconView(
 
 @Composable
 fun TextView(
-    text: String,
+    text: Any,
     modifier: Modifier= Modifier,
     textSize: Int = 16,
     color: Color? = null,
@@ -350,8 +365,13 @@ fun TextView(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val context = LocalContext.current
+    val value = when (text){
+        is String -> text
+        is Int -> context.getString(text)
+        else -> ""
+    }
     Text(
-        text = text,
+        text = value,
         fontSize = textSize.sp,
         textAlign = textAlign,
         color = color ?: textColor(context),
@@ -375,11 +395,11 @@ fun TextView(
 @Composable
 fun TextView(
     text: String,
-    modifier: Modifier,
+    modifier: Modifier=Modifier,
     textSize: Int = 16,
     color: Color? = null,
     font: Font? = null,
-    maxLine:Int =1,
+    maxLine:Int =100,
     textAlign: TextAlign? = TextAlign.Start,
     onclick: (() -> Unit?)? = null
 ) {
@@ -496,23 +516,19 @@ fun AppButton(
 
 
 @Composable
-fun ButtonNext(text: String, modifier: Modifier,onClick: () -> Unit) {
-    Row(
+fun ButtonNext(text: String,  isEnable: Boolean = true,modifier: Modifier,onClick: () -> Unit) {
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .background(
                 brush = Brush.horizontalGradient(
-                    colors = listOf(
+                    colors = if (isEnable) listOf(
                         Color(0xFF02FF9A), Color(0xFF0622BD)
-                    )
+                    ) else listOf(lightGrey, lightGrey)
                 ), shape = RoundedCornerShape(12.dp)
             )
-            .padding(vertical = 12.dp)
-            .onClick {
-                onClick.invoke()
-            },
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 12.dp),
+       contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
@@ -522,6 +538,13 @@ fun ButtonNext(text: String, modifier: Modifier,onClick: () -> Unit) {
             modifier = Modifier.padding(horizontal = 16.dp),
             textAlign = TextAlign.Center
         )
+        Box(modifier = Modifier
+            .matchParentSize()
+            .onClick {
+                if(isEnable){
+                    onClick.invoke()
+                }
+            })
 
     }
 }
@@ -534,7 +557,7 @@ fun ButtonNext2(text: String, modifier: Modifier,onClick: () -> Unit) {
             .background(
                 brush = Brush.horizontalGradient(
                     colors = listOf(
-                        Color(0xFF02FF9A).opacity(0.75f), Color(0xFF0622BD).opacity(0.75f)
+                        Color(0xFF02FF9A).opacity(1f), Color(0xFF0622BD).opacity(1f)
                     )
                 ), shape = RoundedCornerShape(12.dp)
             )

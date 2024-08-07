@@ -24,7 +24,9 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import dong.datn.tourify.app.appLanguageCode
 import dong.datn.tourify.app.currentTheme
+import dong.datn.tourify.app.language.LanguageUtil
 
 private val DarkColorScheme = darkColorScheme(
     primary = black,
@@ -67,6 +69,8 @@ fun TourifyTheme(
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
+    LanguageUtil.setupLanguage(context)
+    LanguageUtil.changeLang(appLanguageCode,context)
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)

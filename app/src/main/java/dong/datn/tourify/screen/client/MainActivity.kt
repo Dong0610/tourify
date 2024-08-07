@@ -12,6 +12,8 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.os.StrictMode
 import android.os.StrictMode.ThreadPolicy
+import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -72,11 +74,14 @@ import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import dong.datn.tourify.R
 import dong.datn.tourify.app.ContextProvider.Companion.viewModel
+import dong.datn.tourify.app.appLanguageCode
 import dong.datn.tourify.app.authSignIn
 import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.app.isShowTrailer
+import dong.datn.tourify.app.language.LanguageUtil
 import dong.datn.tourify.app.viewModels
 import dong.datn.tourify.firebase.Firestore
+import dong.datn.tourify.firebase.NotificationHelper
 import dong.datn.tourify.merchant.api.CreateOrder
 import dong.datn.tourify.model.Order
 import dong.datn.tourify.screen.view.CreateInvoiceOrder
@@ -103,7 +108,6 @@ import dong.duan.ecommerce.library.showToast
 import dong.duan.travelapp.model.Tour
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 import vn.zalopay.sdk.Environment
 import vn.zalopay.sdk.ZaloPayError
 import vn.zalopay.sdk.ZaloPaySDK
@@ -128,6 +132,8 @@ sealed class ClientScreen(var route: String) {
     data object InvoiceOderScreen : ClientScreen("invoice_oder_screen")
     data object DetailImageScreen : ClientScreen("detail_image_screen")
     data object ReviewScreen : ClientScreen("review_screen")
+    data object PolicyScreen : ClientScreen("policy_screen")
+    data object LanguageScreen : ClientScreen("language_screen")
 }
 
 private fun getCountry(context: Context): String? {
@@ -169,18 +175,17 @@ open class MainActivity : ComponentActivity() {
 
     fun payment(totalPrice:String){
         val orderApi = CreateOrder()
-        showToast("Create order")
         val token = mutableStateOf("")
+
         try {
-            val data: JSONObject = orderApi.createOrder(totalPrice)
+            val data = orderApi.createOrder(totalPrice)
             val code = data.getString("returncode")
-            Toast.makeText(applicationContext, "return_code: $code", Toast.LENGTH_LONG).show()
+
             if (code == "1") {
-                token.value=(data.getString("zptranstoken"))
+                token.value=data.getString("zptranstoken")
             }
-            token.value = data.getString("zptranstoken")
         } catch (e: Exception) {
-            showToast("Error: "+e.message.toString())
+            Toast.makeText(applicationContext, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             e.printStackTrace()
         }
         if(token.value!=""){
@@ -257,10 +262,6 @@ open class MainActivity : ComponentActivity() {
 
         val policy = ThreadPolicy.Builder().permitAll().build()
         StrictMode.setThreadPolicy(policy)
-
-        ZaloPaySDK.init(553,Environment.SANDBOX );
-
-       // payment("1000")
         changeTheme(currentTheme,applicationContext)
         setContent {
             LaunchedEffect(key1 = " listNotifications.value.size") {
@@ -346,58 +347,9 @@ open class MainActivity : ComponentActivity() {
         }
     }
 
-    @Composable
-    fun LoaddingDialog() {
-
-        Dialog(
-            onDismissRequest = {},
-            properties = DialogProperties(
-                dismissOnClickOutside = false,
-                dismissOnBackPress = false
-            )
-        ) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                GradientCircularProgressBar()
-            }
 
 
-        }
 
-    }
-
-    @Composable
-    fun GradientCircularProgressBar(
-        modifier: Modifier = Modifier,
-        colors: List<Color> = listOf(white, mediumBlue, orangeRed),
-        strokeWidth: Dp = 6.dp
-    ) {
-        val infiniteTransition = rememberInfiniteTransition(label = "")
-        val rotation = infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 360f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(1200, easing = LinearEasing)
-            ), label = ""
-        )
-
-        Canvas(modifier = modifier
-            .size(46.dp)
-            .graphicsLayer { rotationZ = rotation.value }) {
-            val sweepAngle = 100f
-            val gapAngle = 20f
-
-            for (i in colors.indices) {
-                val startAngle = i * (sweepAngle + gapAngle)
-                drawArc(
-                    brush = Brush.linearGradient(listOf(colors[i], colors[i])),
-                    startAngle = startAngle,
-                    sweepAngle = sweepAngle,
-                    useCenter = false,
-                    style = Stroke(strokeWidth.toPx(), cap = StrokeCap.Round)
-                )
-            }
-        }
-    }
 
     @OptIn(ExperimentalPagerApi::class)
     @Composable
@@ -492,7 +444,7 @@ open class MainActivity : ComponentActivity() {
         val bottomBarState = rememberSaveable { (mutableStateOf(false)) }
         val navController = rememberNavController()
         val keyboardController = LocalSoftwareKeyboardController.current
-
+        val coroutineScope = rememberCoroutineScope()
         Scaffold(
             modifier = Modifier
                 .fillMaxSize()
@@ -546,11 +498,11 @@ open class MainActivity : ComponentActivity() {
                     }
                     animComposable(ClientScreen.ProfileScreen.route) {
                         LaunchedEffect(Unit) {
-                            keyboardController?.hide()
                             bottomBarState.value = true
                             viewModels.currentIndex.value=4
                         }
                         ProfileScreen(navController, viewModels)
+                        keyboardController?.hide()
                     }
                     animComposable(ClientScreen.UpdateProfileScreen.route) {
 
@@ -588,7 +540,6 @@ open class MainActivity : ComponentActivity() {
 
                     }
                     animComposable(ClientScreen.DetailPlaceScreen.route) {
-
                         LaunchedEffect(Unit) {
                             keyboardController?.hide()
                             bottomBarState.value = false
@@ -603,6 +554,7 @@ open class MainActivity : ComponentActivity() {
                     animComposable(ClientScreen.BookingNowScreen.route) {
 
                         LaunchedEffect(Unit) {
+                            keyboardController?.hide()
                             bottomBarState.value = false
                         }
                         BookingNowScreen(navController, viewModels)
@@ -629,7 +581,13 @@ open class MainActivity : ComponentActivity() {
                             keyboardController?.hide()
                             bottomBarState.value = false
                         }
-                        CreateInvoiceOrder(navController, viewModels)
+                        CreateInvoiceOrder(navController, viewModels){
+                            coroutineScope.launch {
+                                ZaloPaySDK.init(553, Environment.SANDBOX)
+                                payment(it)
+                            }
+
+                        }
                     }
                     animComposable(ClientScreen.DetailImageScreen.route) {
                         LaunchedEffect(Unit) {
@@ -645,10 +603,77 @@ open class MainActivity : ComponentActivity() {
                         }
                         ReviewScreen(navController, viewModels)
                     }
+                    animComposable(ClientScreen.PolicyScreen.route) {
+                        LaunchedEffect(Unit) {
+                            keyboardController?.hide()
+                            bottomBarState.value = false
+                        }
+                        PolicyScreen(navController, viewModels)
+                    }
+                    animComposable(ClientScreen.LanguageScreen.route) {
+                        LaunchedEffect(Unit) {
+                            keyboardController?.hide()
+                            bottomBarState.value = false
+                        }
+                        LanguageScreen(navController)
+                    }
                 }
 
 
             })
 
     }
+}
+
+@Composable
+fun GradientCircularProgressBar(
+    modifier: Modifier = Modifier,
+    colors: List<Color> = listOf(white, mediumBlue, orangeRed),
+    strokeWidth: Dp = 6.dp
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "")
+    val rotation = infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing)
+        ), label = ""
+    )
+
+    Canvas(modifier = modifier
+        .size(46.dp)
+        .graphicsLayer { rotationZ = rotation.value }) {
+        val sweepAngle = 100f
+        val gapAngle = 20f
+
+        for (i in colors.indices) {
+            val startAngle = i * (sweepAngle + gapAngle)
+            drawArc(
+                brush = Brush.linearGradient(listOf(colors[i], colors[i])),
+                startAngle = startAngle,
+                sweepAngle = sweepAngle,
+                useCenter = false,
+                style = Stroke(strokeWidth.toPx(), cap = StrokeCap.Round)
+            )
+        }
+    }
+}
+
+@Composable
+fun LoaddingDialog() {
+
+    Dialog(
+        onDismissRequest = {},
+        properties = DialogProperties(
+            dismissOnClickOutside = false,
+            dismissOnBackPress = false
+        )
+    ) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            GradientCircularProgressBar()
+        }
+
+
+    }
+
 }

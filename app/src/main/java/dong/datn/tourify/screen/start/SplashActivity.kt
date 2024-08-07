@@ -28,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -36,12 +38,19 @@ import androidx.compose.ui.unit.sp
 import com.facebook.AccessToken
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.Firebase
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 import dagger.hilt.android.AndroidEntryPoint
 import dong.datn.tourify.R
 import dong.datn.tourify.app.ContextProvider.Companion.viewModel
+import dong.datn.tourify.app.appLanguageCode
 import dong.datn.tourify.app.authSignIn
+import dong.datn.tourify.app.database
+import dong.datn.tourify.app.language.LanguageUtil
+import dong.datn.tourify.database.OrderTime
 import dong.datn.tourify.firebase.Firestore
+import dong.datn.tourify.model.Order
+import dong.datn.tourify.model.OrderStatus
 import dong.datn.tourify.model.Sale
 import dong.datn.tourify.model.SaleType
 import dong.datn.tourify.screen.client.MainActivity
@@ -49,13 +58,19 @@ import dong.datn.tourify.screen.staff.StaffActivity
 import dong.datn.tourify.ui.theme.TourifyTheme
 import dong.datn.tourify.ui.theme.appColor
 import dong.datn.tourify.ui.theme.white
+import dong.datn.tourify.utils.ORDER
 import dong.datn.tourify.utils.USERS
 import dong.datn.tourify.utils.heightPercent
 import dong.duan.ecommerce.library.showToast
 import dong.duan.travelapp.model.Users
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
+import java.util.Locale
 
 @AndroidEntryPoint
 class SplashActivity : ComponentActivity() {
@@ -69,7 +84,7 @@ class SplashActivity : ComponentActivity() {
             ) {
                 authSignIn = it
             }
-
+            //viewModel.loadStatus(authSignIn)
         }
 
 
@@ -142,13 +157,10 @@ class SplashActivity : ComponentActivity() {
             Column(Modifier.fillMaxSize(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 Spacer(modifier = Modifier.heightPercent(25f))
                 Image(
-                    imageVector = ImageVector.vectorResource(id = R.drawable.ic_logo_app),
+                    painter = painterResource(id = R.drawable.img_logo_app),
                     contentDescription = "Logo app",
                     contentScale = ContentScale.FillWidth,
-                    modifier = Modifier.width(120.dp),
-                    colorFilter = ColorFilter.tint(
-                        white
-                    )
+                    modifier = Modifier.width(120.dp)
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(

@@ -1,16 +1,17 @@
 package dong.datn.tourify.merchant.api;
 
-
 import org.json.JSONObject;
 
 import java.util.Date;
 
-import dong.datn.tourify.merchant.AppInfo;
 import dong.datn.tourify.merchant.helper.Helpers;
 import okhttp3.FormBody;
 import okhttp3.RequestBody;
 
 public class CreateOrder {
+    public static final int APP_ID = 553;
+    public static final String MAC_KEY = "9phuAOYhan4urywHTh0ndEXiV3pKHr5Q";
+    public static final String URL_CREATE_ORDER = "https://sandbox.zalopay.com.vn/v001/tpe/createorder";
     private class CreateOrderData {
         String AppId;
         String AppUser;
@@ -25,8 +26,9 @@ public class CreateOrder {
 
         private CreateOrderData(String amount) throws Exception {
             long appTime = new Date().getTime();
-            AppId = String.valueOf(AppInfo.APP_ID);
-            AppUser = "Tourify";
+            Object AppInfo;
+            AppId = String.valueOf(APP_ID);
+            AppUser = "Android_Demo";
             AppTime = String.valueOf(appTime);
             Amount = amount;
             AppTransId = Helpers.getAppTransId();
@@ -43,7 +45,7 @@ public class CreateOrder {
                     this.EmbedData,
                     this.Items);
 
-            Mac = Helpers.getMac(AppInfo.MAC_KEY, inputHMac);
+            Mac = Helpers.getMac(MAC_KEY, inputHMac);
         }
     }
 
@@ -63,8 +65,7 @@ public class CreateOrder {
                 .add("mac", input.Mac)
                 .build();
 
-        JSONObject data = HttpProvider.sendPost(AppInfo.URL_CREATE_ORDER, formBody);
-
+        JSONObject data = HttpProvider.sendPost(URL_CREATE_ORDER, formBody);
         return data;
     }
 }

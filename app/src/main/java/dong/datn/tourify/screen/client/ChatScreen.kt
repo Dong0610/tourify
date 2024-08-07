@@ -37,6 +37,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
@@ -62,6 +63,7 @@ import dong.datn.tourify.ui.theme.darkGray
 import dong.datn.tourify.ui.theme.iconBackground
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.transparent
+import dong.datn.tourify.ui.theme.white
 import dong.datn.tourify.ui.theme.whiteSmoke
 import dong.datn.tourify.utils.Space
 import dong.datn.tourify.utils.TOUR
@@ -136,17 +138,9 @@ fun ChatScreen(nav: NavController, viewModel: AppViewModel) {
                         nav.navigationTo(ClientScreen.HomeClientScreen.route)
                         viewModel.resetCurrentChat()
                     }
-                    Space(w = 8)
-                    RoundedImage(
-                        data = if (lastChatTour == null) R.drawable.img_test_data_2 else lastChatTour!!.tourImage.get(
-                            0
-                        ),
-                        Modifier.size(40.dp),
-                        shape = RoundedCornerShape(30.dp)
-                    )
                     Space(w = 12)
                     TextView(
-                        if (lastChatTour == null) "Null" else lastChatTour!!.tourName,
+                        context.getString(R.string.chat),
                         Modifier.weight(1f),
                         textSize = 16,
                         maxLine = 1,
@@ -244,13 +238,22 @@ fun ChatScreen(nav: NavController, viewModel: AppViewModel) {
                     Spacer(modifier = Modifier.width(6.dp))
                     Box(
                         modifier = Modifier
-                            .background(boxColor(), CircleShape)
+                            .background(
+                                brush = Brush.horizontalGradient(
+                                    colors = listOf(
+                                        Color(0xFF3F51B5), Color(0xFF2196F3)
+                                    )
+                                ), shape = CircleShape
+
+                            )
                             .size(42.dp), contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Send,
                             contentDescription = "Send",
-                            tint = appColor,
+                            tint = white
+
+                            ,
                             modifier = Modifier.rotate(-25f)
                         )
                         Box(modifier = Modifier
@@ -264,6 +267,7 @@ fun ChatScreen(nav: NavController, viewModel: AppViewModel) {
                                             )
                                         }
                                     }
+                                    contentChat.value = ""
                                 }
                             })
                     }
@@ -285,6 +289,18 @@ fun InformationAboutTour(id: String, callback: (Tour?) -> Unit) {
         tourData.value = it
     }
     if (tourData.value != null) {
+
+        val imageData = remember {
+            mutableStateOf(tourData.value!!.tourImage[0])
+        }
+        LaunchedEffect("UIImage") {
+            delay(2000)
+            val currentIndex = tourData.value!!.tourImage.indexOf(imageData.value)
+            val nextIndex = (currentIndex + 1) % tourData.value!!.tourImage.size
+            imageData.value = tourData.value!!.tourImage[nextIndex]
+        }
+
+
         Box(
             Modifier
                 .fillMaxWidth()
@@ -300,7 +316,7 @@ fun InformationAboutTour(id: String, callback: (Tour?) -> Unit) {
             ) {
 
                 RoundedImage(
-                    tourData.value!!.tourImage.get(0),
+                   imageData.value,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .heightPercent(18f)
@@ -316,6 +332,8 @@ fun InformationAboutTour(id: String, callback: (Tour?) -> Unit) {
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp),
                     textAlign = TextAlign.Start,
+                    textSize = 14,
+                    maxLine = 2,
                     font = Font(R.font.poppins_medium)
                 )
                 Spacer(modifier = Modifier.height(6.dp))
@@ -325,8 +343,8 @@ fun InformationAboutTour(id: String, callback: (Tour?) -> Unit) {
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp),
                     textAlign = TextAlign.Start,
-                    maxLine = 1,
-                    textSize = 14,
+                    maxLine = 2,
+                    textSize = 12,
                     font = Font(R.font.poppin_light)
                 )
                 Spacer(modifier = Modifier.height(6.dp))

@@ -1,5 +1,6 @@
 package dong.duan.livechat.widget
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -7,10 +8,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,6 +32,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -43,6 +48,7 @@ import dong.datn.tourify.app.currentTheme
 import dong.datn.tourify.ui.theme.darkGray
 import dong.datn.tourify.ui.theme.iconBackground
 import dong.datn.tourify.ui.theme.lightGrey
+import dong.datn.tourify.ui.theme.red
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.transparent
 import dong.datn.tourify.ui.theme.whiteSmoke
@@ -97,10 +103,12 @@ fun InputValue(
     value: String,
     hint: String = "",
     maxLines: Int=1,
+    hintColor: Color= darkGray,
     font: Font = Font(R.font.poppins_medium),
     textSize: TextUnit =16.sp,
     keyboardType: KeyboardType = KeyboardType.Text,
-    onValueChange: (String) -> Unit
+    onValueChange: (String) -> Unit,
+
 ) {
     val context = LocalContext.current
     Row(
@@ -139,7 +147,7 @@ fun InputValue(
                         Text(
                             text = hint,
                             style = TextStyle(
-                                color = darkGray,
+                                color = hintColor,
                                 fontSize = textSize,
                                 fontFamily = FontFamily(font)
                             )
@@ -157,9 +165,10 @@ fun InputValue(
     value: String,
     hint: String = "",
     font: Font = Font(R.font.poppins_medium),
-    modifier: Modifier=Modifier,
+    @SuppressLint("ModifierParameter") modifier: Modifier=Modifier,
     maxLines: Int=1,
-    teAlignment: TextAlign= TextAlign.Center,
+    hintColor: Color= darkGray,
+    teAlignment: TextAlign= TextAlign.Start,
     textSize: TextUnit =16.sp,
     keyboardType: KeyboardType = KeyboardType.Text,
     onValueChange: (String) -> Unit
@@ -167,22 +176,15 @@ fun InputValue(
     val context = LocalContext.current
     Row(
         modifier = modifier
-            .fillMaxWidth()
-            .background(
-                color = transparent,
-                shape = RoundedCornerShape(12.dp)
-            )
-            .wrapContentHeight(),
-        horizontalArrangement = Arrangement.Center,
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
         BasicTextField(
             value = value,
             onValueChange = { onValueChange(it) },
             modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 8.dp)
-                .background(Color.Transparent),
+                .padding(horizontal = 8.dp),
             textStyle = TextStyle(
                 color = textColor(context),
                 fontSize = textSize,
@@ -197,13 +199,14 @@ fun InputValue(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(12.dp), contentAlignment = Alignment.CenterStart
+                        .padding(horizontal = 6.dp, vertical = 12.dp), contentAlignment = Alignment.CenterStart
                 ) {
                     if (value.isEmpty()) {
                         Text(
                             text = hint,
+                            maxLines = maxLines,
                             style = TextStyle(
-                                color = darkGray,
+                                color = hintColor,
                                 fontSize = textSize,
                                 fontFamily = FontFamily(font)
                             )
@@ -223,8 +226,9 @@ fun SearchBox(
     onTouch: (String) -> Unit
 ) {
     val context = LocalContext.current
-
+    val localFocus = LocalFocusManager.current
     val valueSearch = remember { mutableStateOf(TextFieldValue("")) }
+    val keyboardType  = LocalSoftwareKeyboardController.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -281,6 +285,8 @@ fun SearchBox(
         )
         Image(imageVector = Icons.Rounded.Search, contentDescription = "Search", Modifier.onClick {
             onTouch.invoke(valueSearch.value.text)
+            localFocus.clearFocus(true)
+            keyboardType?.hide()
         }, colorFilter = ColorFilter.tint(textColor(context)))
         Spacer(modifier = Modifier.width(12.dp))
     }

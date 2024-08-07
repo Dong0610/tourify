@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.style.TextAlign
@@ -62,6 +63,7 @@ import kotlinx.coroutines.launch
 fun ProfileScreen(navController: NavHostController, viewModels: AppViewModel) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    LocalSoftwareKeyboardController.current?.hide()
     ViewParent(onBack = {
         viewModels.currentIndex.value = 3
         navController.navigate(ClientScreen.NotificationScreen.route) {
@@ -189,13 +191,13 @@ fun ProfileScreen(navController: NavHostController, viewModels: AppViewModel) {
                             restoreState = true
                         }
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    ItemMenuProfie(
-                        icon = R.drawable.ic_rounder_payment,
-                        label = context.getString(R.string.payment_medthod)
-                    ) {
-
-                    }
+//                    Spacer(modifier = Modifier.height(8.dp))
+//                    ItemMenuProfie(
+//                        icon = R.drawable.ic_rounder_payment,
+//                        label = context.getString(R.string.payment_medthod)
+//                    ) {
+//
+//                    }
                     Spacer(modifier = Modifier.height(8.dp))
                     ItemMenuProfie(
                         icon = R.drawable.ic_rounder_update,
@@ -208,7 +210,7 @@ fun ProfileScreen(navController: NavHostController, viewModels: AppViewModel) {
                         icon = R.drawable.ic_rounder_security,
                         label = context.getString(R.string.security)
                     ) {
-
+                        navController.navigationTo(ClientScreen.PolicyScreen.route)
                     }
 
 

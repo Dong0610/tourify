@@ -22,7 +22,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
@@ -33,7 +32,9 @@ import androidx.navigation.NavHostController
 import com.guru.fontawesomecomposelib.FaIcon
 import com.guru.fontawesomecomposelib.FaIconType
 import com.guru.fontawesomecomposelib.FaIcons
+import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
+import dong.datn.tourify.app.appContext
 import dong.datn.tourify.screen.client.ClientScreen
 import dong.datn.tourify.ui.theme.navigationBar
 import dong.datn.tourify.ui.theme.navigationColor
@@ -42,17 +43,33 @@ import dong.datn.tourify.ui.theme.white
 enum class BottomNavigationItem(
     var icon: Any,
     var screen: String,
-    var title: String
+    var title: Int
 ) {
-    HOMES(Icons.Rounded.Home, ClientScreen.HomeClientScreen.route, "Home"),
-    DISCOVER(Icons.Rounded.Search, ClientScreen.DiscoveryScreen.route, "Discovery"),
-    CHAT(FaIcons.FacebookMessenger, ClientScreen.ChatScreen.route, "Chats"),
+    HOMES(
+        Icons.Rounded.Home,
+        ClientScreen.HomeClientScreen.route,
+      R.string.home
+    ),
+    DISCOVER(
+        Icons.Rounded.Search,
+        ClientScreen.DiscoveryScreen.route,
+      R.string.discover
+    ),
+    CHAT(
+        FaIcons.FacebookMessenger,
+        ClientScreen.ChatScreen.route,
+        R.string.chat
+    ),
     NOTIFICATION(
         Icons.Rounded.Notifications,
         ClientScreen.NotificationScreen.route,
-        "Notifications"
+        R.string.notification
     ),
-    PROFILE(Icons.Rounded.Person, ClientScreen.ProfileScreen.route, "Profile"),
+    PROFILE(
+        Icons.Rounded.Person,
+        ClientScreen.ProfileScreen.route,
+        R.string.profile
+    ),
 }
 
 
@@ -65,6 +82,7 @@ fun BottomNavigationBar(
 ) {
     val navItems = BottomNavigationItem.entries
     val context = LocalContext.current
+    appContext= LocalContext.current
     AnimatedVisibility(visible = bottomBarState.value,
         enter = slideInVertically(initialOffsetY = { it }),
         exit = slideOutVertically(targetOffsetY = { it }),
@@ -106,13 +124,13 @@ fun BottomNavigationBar(
                     } else {
                         when (item.icon) {
                             is ImageVector -> Icon(
-                                item.icon as ImageVector,
-                                contentDescription = item.title
+                                imageVector = item.icon as ImageVector,
+                                contentDescription = LocalContext.current.getString(item.title)
                             )
 
                             is Painter -> Icon(
                                 painter = item.icon as Painter,
-                                contentDescription = item.title
+                                contentDescription = LocalContext.current.getString(item.title)
                             )
 
                             else -> {
@@ -129,7 +147,7 @@ fun BottomNavigationBar(
                 },
                 label = {
                     Text(
-                        item.title, maxLines = 1
+                        LocalContext.current.getString(item.title), maxLines = 1
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(

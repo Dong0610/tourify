@@ -27,7 +27,8 @@ object LanguageUtil {
         context.resources.updateConfiguration(config, null)
     }
 
-    fun changeLang(lang: String?, context: Context) {
+    fun
+            changeLang(lang: String?, context: Context) {
         if (TextUtils.isEmpty(lang)) return
         val myLocale = Locale(lang)
         saveLocale(lang)
@@ -43,12 +44,3 @@ object LanguageUtil {
 
 
 }
-
-var languageCode: String?
-    get() = sharedPreferences.getString(LanguageUtil.LANGUAGE, "")
-    set(value) {
-        if (value != null) {
-            sharedPreferences.putString(LanguageUtil.LANGUAGE, value)
-        }
-        firstStartApp = false
-    }

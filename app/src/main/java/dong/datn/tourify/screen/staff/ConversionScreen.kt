@@ -115,21 +115,26 @@ fun ConversionScreen(nav: NavController, viewModel: AppViewModel, drawerState: (
     val coroutineScope = rememberCoroutineScope()
     val listMessage = viewModel.listChatCurrent
     val lazyColumnListState = rememberLazyListState()
-
-    if (currentConversionChat.value != null) {
-        LaunchedEffect(key1 = "Listen Chat ") {
-            viewModel.startListeningForNewChatsByConverId(currentConversionChat.value!!.converId)
-            snapshotFlow { listMessage.value.size }
-                .distinctUntilChanged()
-                .collectLatest {
-                    coroutineScope.launch {
-                        if (listMessage.value.isNotEmpty()) {
-                            lazyColumnListState.animateScrollToItem(0)
+    val isChangeInfoTour = remember {
+        mutableStateOf(false)
+    }
+    if (isChangeInfoTour.value == true) {
+        if (currentConversionChat.value != null) {
+            LaunchedEffect(key1 = "Listen Chat ") {
+                viewModel.startListeningForNewChatsByConverId(currentConversionChat.value!!.converId)
+                snapshotFlow { listMessage.value.size }
+                    .distinctUntilChanged()
+                    .collectLatest {
+                        coroutineScope.launch {
+                            if (listMessage.value.isNotEmpty()) {
+                                lazyColumnListState.animateScrollToItem(0)
+                            }
                         }
                     }
-                }
+            }
         }
     }
+
 
 
 
@@ -150,6 +155,7 @@ fun ConversionScreen(nav: NavController, viewModel: AppViewModel, drawerState: (
 
                 ConversionLeft(viewModel, drawerState) {
                     currentConversionChat.value = it
+                    isChangeInfoTour.value = true
                 }
             }
             Spacer(
@@ -160,7 +166,7 @@ fun ConversionScreen(nav: NavController, viewModel: AppViewModel, drawerState: (
             )
             Column(
                 Modifier
-                    .weight(4.5f)
+                    .weight(5f)
                     .padding(horizontal = 6.dp)
                     .fillMaxHeight()
             ) {
@@ -270,7 +276,7 @@ fun ConversionScreen(nav: NavController, viewModel: AppViewModel, drawerState: (
             )
             Column(
                 Modifier
-                    .weight(2.5f)
+                    .weight(2f)
                     .fillMaxHeight()
             ) {
 
@@ -334,6 +340,7 @@ fun ConversionLeft(
         ) {
             this.items(listConversionChat.value) {
                 ConversionItem(it = it) {
+
                     onTouchState.invoke(it)
                 }
             }
@@ -342,6 +349,9 @@ fun ConversionLeft(
 
 
     }
+
+
+
 
 }
 
@@ -607,7 +617,6 @@ fun ConversionItem(it: ConversionChat, callback: (ConversionChat) -> Unit) {
                 color = transparent,
                 shape = RoundedCornerShape(8.dp)
             )
-
     ) {
         Row(
             Modifier

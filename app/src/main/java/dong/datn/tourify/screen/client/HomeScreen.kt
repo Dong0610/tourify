@@ -46,6 +46,7 @@ import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.PagerState
 import com.google.accompanist.pager.rememberPagerState
+import com.google.gson.Gson
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.app.authSignIn
@@ -81,8 +82,15 @@ import dong.datn.tourify.widget.onClick
 import dong.duan.ecommerce.library.showToast
 import dong.duan.livechat.widget.SearchBox
 import dong.duan.travelapp.model.Tour
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.FormBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.io.IOException
+
 
 @SuppressLint("MutableCollectionMutableState")
 @OptIn(ExperimentalPagerApi::class)
@@ -112,6 +120,12 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
             }
         }
     }
+    val listPlaceItem = remember {
+        mutableStateOf(mutableListOf<Tour>())
+    }
+    if (viewModel.listTour.value.size > 0) {
+        listPlaceItem.value = viewModel.listTour.value
+    }
 
 
     val indexSlideImage = remember {
@@ -120,6 +134,7 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
     viewModel.getAllPlaces {
         listPlaces.value = it
     }
+
 
     ViewParent {
         Column {
@@ -178,16 +193,6 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
             VerScrollView {
                 Column {
                     Spacer(modifier = Modifier.height(12.dp))
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                    ) {
-                        SearchBox({}, {
-                            showToast(it)
-                        })
-                    }
-                    Spacer(modifier = Modifier.height(12.dp))
                     if (viewModel.listSale.value.size > 0) {
                         Row(
                             Modifier
@@ -222,16 +227,37 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
                     ) {
                         ItemCategory(
                             getNewVehicle(context).get(0), Modifier.weight(0.3f)
-                        ) {
-
+                        ) { id ->
+                            val listItem = viewModel.listTour.value
+                            val newSearch = mutableListOf<Tour>()
+                            listItem.forEach {
+                                if (it.vehicleId == id.vhId) {
+                                    newSearch.add(it)
+                                }
+                            }
+                            listPlaceItem.value = newSearch
                         }
                         Spacer(modifier = Modifier.width(12.dp))
-                        ItemCategory(getNewVehicle(context).get(1), Modifier.weight(0.3f)) {
-
+                        ItemCategory(getNewVehicle(context).get(1), Modifier.weight(0.3f)) { id ->
+                            val listItem = viewModel.listTour.value
+                            val newSearch = mutableListOf<Tour>()
+                            listItem.forEach {
+                                if (it.vehicleId == id.vhId) {
+                                    newSearch.add(it)
+                                }
+                            }
+                            listPlaceItem.value = newSearch
                         }
                         Spacer(modifier = Modifier.width(12.dp))
-                        ItemCategory(getNewVehicle(context).get(2), Modifier.weight(0.3f)) {
-
+                        ItemCategory(getNewVehicle(context).get(2), Modifier.weight(0.3f)) { id ->
+                            val listItem = viewModel.listTour.value
+                            val newSearch = mutableListOf<Tour>()
+                            listItem.forEach {
+                                if (it.vehicleId == id.vhId) {
+                                    newSearch.add(it)
+                                }
+                            }
+                            listPlaceItem.value = newSearch
                         }
                     }
                     Spacer(modifier = Modifier.height(12.dp))
@@ -242,7 +268,7 @@ fun HomeClientScreen(nav: NavController, viewModel: AppViewModel, location: Stri
                             .heightPercent(30f)
                     ) {
                         LazyRow {
-                            items(viewModel.listTour.value, key = {
+                            items(listPlaceItem.value, key = {
                                 it.tourID
                             }) {
                                 ItemTopBucketTour(it) {
@@ -403,6 +429,7 @@ fun ItemTopBucketTour(tour: Tour, onTouch: (Tour) -> Unit) {
             TextView(
                 text = tour.tourName,
                 modifier = Modifier,
+                maxLine = 1,
                 font = Font(R.font.poppins_medium)
             )
             Spacer(modifier = Modifier.height(2.dp))
@@ -472,9 +499,7 @@ fun ItemCategory(vehicle: Vehicle, modifier: Modifier, onSelect: (Vehicle) -> Un
         modifier
             .background(color = appColor, shape = RoundedCornerShape(12.dp))
             .padding(vertical = 6.dp)
-            .onClick {
-                onSelect.invoke(vehicle)
-            }) {
+    ) {
         Row(
             Modifier.fillMaxSize(),
             horizontalArrangement = Arrangement.Center,
@@ -491,6 +516,9 @@ fun ItemCategory(vehicle: Vehicle, modifier: Modifier, onSelect: (Vehicle) -> Un
                 textSize = 16, color = white, maxLine = 1
             )
         }
+        Box(modifier = Modifier
+            .matchParentSize()
+            .onClick { onSelect.invoke(vehicle) })
     }
 
 }

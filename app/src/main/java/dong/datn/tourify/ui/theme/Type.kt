@@ -100,7 +100,10 @@ fun formatRelativeTime(timestamp: String): String {
     }
 }
 fun getTimeBeforeHours(dateTimeString: String, hour: Int = 36): String {
-    val formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")
+    val length = dateTimeString.length
+    val chLength = "06:00:00 08/08/2024".length
+
+    val formatter = DateTimeFormatter.ofPattern(if(chLength==length) "HH:mm:ss dd/MM/yyyy" else "HH:mm dd/MM/yyyy")
     val dateTime = LocalDateTime.parse(dateTimeString, formatter)
     val dateTimeBefore48Hours = dateTime.minus(hour.toLong(), ChronoUnit.HOURS)
     return dateTimeBefore48Hours.format(formatter)

@@ -14,6 +14,7 @@ const val LOVE: String = "LOVE"
 const val ORDER: String = "ORDER"
 const val SALES: String = "SALES"
 const val COMMENT: String = "COMMENT"
+const val PLACES:String= "PLACES"
 
 
 

@@ -1,6 +1,7 @@
 package dong.datn.tourify.screen.client
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -63,11 +64,9 @@ import dong.datn.tourify.ui.theme.red
 import dong.datn.tourify.ui.theme.textColor
 import dong.datn.tourify.ui.theme.transparent
 import dong.datn.tourify.ui.theme.white
-import dong.datn.tourify.utils.CallbackType
 import dong.datn.tourify.utils.CommonDivider
 import dong.datn.tourify.utils.SERVICE
 import dong.datn.tourify.utils.Space
-import dong.datn.tourify.utils.delay
 import dong.datn.tourify.utils.toCurrency
 import dong.datn.tourify.utils.widthPercent
 import dong.datn.tourify.widget.AppButton
@@ -79,12 +78,13 @@ import dong.datn.tourify.widget.ViewParent
 import dong.datn.tourify.widget.navigationTo
 import dong.datn.tourify.widget.onClick
 import dong.duan.ecommerce.library.showToast
+import dong.duan.livechat.utility.toJson
 import dong.duan.livechat.widget.InputValue
 import dong.duan.travelapp.model.Tour
 import dong.duan.travelapp.model.TourTime
 import kotlinx.coroutines.launch
 
-@SuppressLint("CoroutineCreationDuringComposition")
+@SuppressLint("CoroutineCreationDuringComposition", "UnrememberedMutableState")
 @Composable
 fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
     val context = LocalContext.current
@@ -105,6 +105,11 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
         mutableStateOf<String>("")
     }
 
+
+    val maxSelectedCount = remember {
+        mutableStateOf(0)
+    }
+
     val coroutineScope = rememberCoroutineScope()
 
     if (tour.value != null) {
@@ -114,7 +119,12 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
         coroutineScope.launch {
            viewModels.salePrice.value = salePriceByTour(tour.value!!)
         }
+        viewModels.tourTimeSelected.value = tour.value!!.tourTime.get(0)
+
     }
+
+
+
     ViewParent(onBack = {
         nav.navigationTo(ClientScreen.DetailTourScreen.route)
     }) {
@@ -209,48 +219,75 @@ fun BookingNowScreen(nav: NavController, viewModels: AppViewModel) {
                     CommonDivider(Modifier.padding(horizontal = 24.dp))
                     Spacer(modifier = Modifier.height(6.dp))
                     TextView(
-                        text = context.getString(R.string.choose_time_and_count),
+                        text = context.getString(R.string.choose_time_and_count) +" "+(maxSelectedCount.value),
                         modifier = Modifier,
                         font = Font(R.font.poppins_medium),
                         textSize = 18,
                         color = if (currentTheme == 1) appColor else white
                     )
                     Spacer(modifier = Modifier.height(6.dp))
+
                     DropdownSelectTime(
                         tour = tour.value!!, modifier = Modifier.fillMaxWidth()
                     ) {
+
                         viewModels.tourTimeSelected.value = it
+                        showToast(it.count)
+                        maxSelectedCount.value = it.count
                     }
                     Spacer(modifier = Modifier.height(12.dp))
-
+                    TextView(
+                        context.getString(R.string.above_10_age),
+                        color = red,
+                        textSize = 14,
+                        font = Font(R.font.poppins_regular)
+                    )
                     ArrowValue(
                         name = context.getString(R.string.adult),
-                        price =viewModels. salePrice.value,
-                        max = viewModels.tourTimeSelected.value.count
-                    ) {
-                        viewModels.countAdult.value = it
+                        price = viewModels.salePrice.value,
+                        max = maxSelectedCount.value
+                    ) { count, _ ->
+                        viewModels.countAdult.value = count
                         viewModels.totalPrice.value =
-                            (viewModels.salePrice.value * viewModels.countAdult.value) + (viewModels.salePrice.value * 0.75f * viewModels.countChild.value)
-                        if (viewModels.totalPrice.value == 0.0 || it == 0) {
-                            isDisable.value = true
-                        } else {
-                            isDisable.value = false
-                        }
+                            (viewModels.salePrice.value * viewModels.countAdult.value) +
+                                    (viewModels.salePrice.value * 0.5f * viewModels.countChild.value)
+                        isDisable.value = viewModels.totalPrice.value == 0.0 || count == 0
+                        maxSelectedCount.value = (viewModels.tourTimeSelected.value?.count ?: 0) - count
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Spacer(modifier = Modifier.height(6.dp))
+                    TextView(
+                        context.getString(R.string.above_2_to_10_age),
+                        color = red,
+                        textSize = 14,
+                        font = Font(R.font.poppins_regular)
+                    )
                     ArrowValue(
                         name = context.getString(R.string.child),
-                        price =viewModels. salePrice.value * 0.75,
-                        max = viewModels.tourTimeSelected.value.count
-                    ) {
-                        viewModels.countChild.value = it
+                        price = viewModels.salePrice.value * 0.75,
+                        max = maxSelectedCount.value
+                    ) { count, _ ->
+                        viewModels.countChild.value = count
                         viewModels.totalPrice.value =
-                            (viewModels.salePrice.value * viewModels.countAdult.value) + (viewModels.salePrice.value * 0.75f * viewModels.countChild.value)
-                        if (viewModels.totalPrice.value == 0.0 || viewModels.countAdult.value == 0) {
-                            isDisable.value = true
-                        } else {
-                            isDisable.value = false
-                        }
+                            (viewModels.salePrice.value * viewModels.countAdult.value) +
+                                    (viewModels.salePrice.value * 0.5f * viewModels.countChild.value)
+                        isDisable.value = viewModels.totalPrice.value == 0.0 || viewModels.countAdult.value == 0
+                        maxSelectedCount.value = (viewModels.tourTimeSelected.value?.count ?: 0) - count
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    TextView(
+                        context.getString(R.string.under_2_age),
+                        color = red,
+                        textSize = 14,
+                        font = Font(R.font.poppins_regular)
+                    )
+                    ArrowValue(
+                        name = context.getString(R.string.child),
+                        price = 0.0,
+                        max = 100,
+                        false
+                    ) { it, type ->
+                        viewModels.countToddle.value = it
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(
@@ -357,6 +394,7 @@ fun CustomDialog(totalPrice: Double, onDismiss: () -> Unit, onConfirm: () -> Uni
                     text = LocalContext.current.getString(R.string.confirm_message) + " ${(totalPrice * percentDeposit).toCurrency()}",
                     modifier = Modifier,
                     textSize = 18,
+                    maxLine = 100,
                     font = Font(R.font.poppins_regular)
                 )
 
@@ -405,55 +443,60 @@ fun CustomDialog(totalPrice: Double, onDismiss: () -> Unit, onConfirm: () -> Uni
     }
 }
 
+
 @Composable
-fun ArrowValue(name: String, price: Double, max: Int = 10, onTouch: (Int) -> Unit) {
+fun ArrowValue(
+    name: String,
+    price: Double,
+    max: Int = 10,
+    isCreatePrice: Boolean = true,
+    onTouch: (Int, Int) -> Unit
+) {
     val context = LocalContext.current
-    val count = remember {
-        mutableStateOf(0)
-    }
+    val count = remember { mutableStateOf(0) }
+
     Row(
         modifier = Modifier
             .height(50.dp)
-            .background(
-                color = transparent,
-            )
+            .background(color = transparent)
             .fillMaxWidth()
             .border(
-                width = 1.dp, shape = RoundedCornerShape(12.dp), color = textColor(context)
-            ), verticalAlignment = Alignment.CenterVertically
+                width = 1.dp,
+                shape = RoundedCornerShape(12.dp),
+                color = textColor(context)
+            ),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Space(w = 12)
-        Row(Modifier) {
+        Row {
             TextView(
-                text = name + ": ",
+                text = "$name: ",
                 modifier = Modifier,
                 textSize = 16,
                 font = Font(R.font.poppins_semibold)
             )
             Spacer(modifier = Modifier.width(6.dp))
             TextView(
-                text = (count.value * price).toCurrency("vn"),
+                text = if (isCreatePrice) (count.value * price).toCurrency("vn") else 0.toCurrency(),
                 modifier = Modifier,
-                color = colorByTheme(
-                    red, white
-                ),
+                color = colorByTheme(red, white),
                 textSize = 16,
                 font = Font(R.font.poppins_semibold)
             )
         }
         Spacer(modifier = Modifier.weight(1f))
-        Row(Modifier.widthPercent(30f), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_round_remove),
-                tint = textColor(context = context),
+                tint = textColor(context),
                 contentDescription = "Remove",
                 modifier = Modifier.onClick {
-                    count.value--;
-                    if (count.value <= 0) {
-                        count.value = 0;
-                    }
-                    onTouch(count.value)
-                })
+                    count.value = (count.value - 1).coerceAtLeast(0)
+                    onTouch(count.value, 1)
+                }
+            )
             Spacer(modifier = Modifier.width(12.dp))
             TextView(
                 text = count.value.toString(),
@@ -466,14 +509,12 @@ fun ArrowValue(name: String, price: Double, max: Int = 10, onTouch: (Int) -> Uni
             Icon(
                 painter = painterResource(id = R.drawable.ic_round_add),
                 contentDescription = "Add",
-                tint = textColor(context = context),
+                tint = textColor(context),
                 modifier = Modifier.onClick {
-                    count.value++;
-                    if (count.value > max) {
-                        count.value = max;
-                    }
-                    onTouch(count.value)
-                })
+                    count.value = (count.value + 1).coerceAtMost(max)
+                    onTouch(count.value, -1)
+                }
+            )
             Spacer(modifier = Modifier.width(6.dp))
         }
         Space(w = 12)
@@ -497,6 +538,8 @@ fun DropdownSelectTime(
         )
     }
 
+    Log.d("TourTimeData", "DropdownSelectTime: ${tour.tourTime.toJson()}")
+
     Box(
         modifier = modifier
             .height(50.dp)
@@ -519,12 +562,13 @@ fun DropdownSelectTime(
                 Column(Modifier.weight(1f)) {
                     TextView(
                         text = context.getString(R.string.from) + " " + selectedText.value.startTime,
-                        modifier = Modifier
+                        modifier = Modifier,
+                        textSize = 14
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     TextView(
-                        text = context.getString(R.string.to) + " " + selectedText.value.startTime,
-                        modifier = Modifier
+                        text = context.getString(R.string.to) + " " + selectedText.value.endTime + " ",
+                        modifier = Modifier, textSize = 14
                     )
                 }
                 Icon(
@@ -540,6 +584,7 @@ fun DropdownSelectTime(
                 tour.tourTime.forEach { item ->
                     DropdownMenuItem(text = {
                         TextView(
+                            maxLine = 2,
                             onclick = {
                                 expanded.value = false
                                 selectedText.value = item

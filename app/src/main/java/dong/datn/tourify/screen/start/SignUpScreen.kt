@@ -164,17 +164,17 @@ fun SignUpScreen(nav: NavController, viewModels: AppViewModel, onFacebook:() -> 
                     Spacer(modifier = Modifier.height(24.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                         TextView(
-                            text = context.getString(R.string.don_have_account),
+                            text = context.getString(R.string.have_account),
                             modifier = Modifier,
                             color = textColor()
                         )
                         SpaceW(w = 6)
                         TextView(
-                            text = context.getString(R.string.sign_up),
+                            text = context.getString(R.string.sign_in_s),
                             modifier = Modifier,
                             color = appColor
                         ) {
-                            nav.navigate(AccountScreen.SignUpScreen.route) {
+                            nav.navigate(AccountScreen.SignInScreen.route) {
                                 popUpTo(0)
                             }
                         }

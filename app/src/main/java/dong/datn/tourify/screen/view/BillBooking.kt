@@ -47,18 +47,23 @@ import androidx.navigation.NavController
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.app.authSignIn
+import dong.datn.tourify.app.isPostNotification
 import dong.datn.tourify.app.percentDeposit
 import dong.datn.tourify.app.viewModels
 import dong.datn.tourify.firebase.Firestore
+import dong.datn.tourify.firebase.NotificationHelper
 import dong.datn.tourify.firebase.RealTime
 import dong.datn.tourify.firebase.putImgToStorage
 import dong.datn.tourify.screen.client.ClientScreen
 import dong.datn.tourify.ui.theme.black
+import dong.datn.tourify.ui.theme.darkGray
+import dong.datn.tourify.ui.theme.gray
 import dong.datn.tourify.ui.theme.white
 import dong.datn.tourify.utils.CallbackType
 import dong.datn.tourify.utils.NOTIFICATION
 import dong.datn.tourify.utils.ORDER
 import dong.datn.tourify.utils.SpaceH
+import dong.datn.tourify.utils.SpaceW
 import dong.datn.tourify.utils.delay
 import dong.datn.tourify.utils.timeNow
 import dong.datn.tourify.utils.toCurrency
@@ -68,6 +73,7 @@ import dong.datn.tourify.widget.IconView2
 import dong.datn.tourify.widget.TextView
 import dong.datn.tourify.widget.ViewParentContent
 import dong.datn.tourify.widget.navigationTo
+import dong.duan.travelapp.model.TourTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -76,7 +82,7 @@ import kotlin.coroutines.resume
 
 
 @Composable
-fun CreateInvoiceOrder(nav: NavController, viewModels: AppViewModel) {
+fun CreateInvoiceOrder(nav: NavController, viewModels: AppViewModel, payment: (String) -> Unit) {
     val context = LocalContext.current
 
     val salePrice = remember {
@@ -104,15 +110,15 @@ fun CreateInvoiceOrder(nav: NavController, viewModels: AppViewModel) {
 
         Column(
             modifier = Modifier
+                .background(darkGray)
                 .fillMaxSize()
                 .drawWithCache {
                     val width = this.size.width.toInt()
                     val height = this.size.height.toInt()
                     onDrawWithContent {
-                        val pictureCanvas =
-                            androidx.compose.ui.graphics.Canvas(
-                                picture.beginRecording(width, height)
-                            )
+                        val pictureCanvas = androidx.compose.ui.graphics.Canvas(
+                            picture.beginRecording(width, height)
+                        )
                         draw(this, this.layoutDirection, pictureCanvas, this.size) {
                             this@onDrawWithContent.drawContent()
                         }
@@ -121,12 +127,12 @@ fun CreateInvoiceOrder(nav: NavController, viewModels: AppViewModel) {
                     }
                 }
         ) {
-            BillBooking(salePrice)
+            BillBooking(salePrice,viewModels.tourTimeSelected.value!!)
         }
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding( 12.dp),
+                .padding(12.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             IconView2(modifier = Modifier, icon = Icons.Rounded.KeyboardArrowLeft) {
@@ -135,37 +141,58 @@ fun CreateInvoiceOrder(nav: NavController, viewModels: AppViewModel) {
 
             Modifier.weight(1f)
 
-            ButtonNext2(
-                text = context.getString(R.string.continues),
-                modifier = Modifier.wrapContentHeight()
-            ) {
-                viewModels.loadingState.value = true
-                viewModels.creteOrderByTour(
-                    tour.value!!, viewModels.notes.value, salePrice.value,
-                    viewModels.tourTimeSelected.value
-                ) { it, id, notiId ->
-                    if (it == CallbackType.SUCCESS) {
-                        createUriFromView { url ->
-                            Firestore.updateAsync("$ORDER/$id", hashMapOf<String, Any>().apply {
-                                put("invoiceUrl", url)
-                            })
+            Row(Modifier.fillMaxWidth()) {
+                ButtonNext2(
+                    text = context.getString(R.string.zalopay),
+                    modifier = Modifier
+                        .wrapContentHeight()
+                        .weight(1f)
+                ) {
+                    payment.invoke("${prePayment.value.toInt()}")
+                }
+                SpaceW(w = 12)
+                ButtonNext2(
+                    text = context.getString(R.string.continues),
+                    modifier = Modifier
+                        .wrapContentHeight()
+                        .weight(1f)
+                ) {
+                    viewModels.loadingState.value = true
+                    viewModels.creteOrderByTour(
+                        tour.value!!, viewModels.notes.value, salePrice.value,
+                        viewModels.tourTimeSelected.value!!
+                    ) { it, id, notiId ->
+                        if (it == CallbackType.SUCCESS) {
+                            if (isPostNotification) {
+                                NotificationHelper(context = context).sendNotificationBooking(tour.value!!)
+                            }
 
-                            RealTime.udapte(
-                                "$NOTIFICATION/${authSignIn!!.UId}/${notiId.notiId}",notiId.apply {
-                                    link= url
-                                },
-                                {},
-                                {})
-                        }
-                        delay(1500) {
-                            nav.navigationTo(ClientScreen.BookingScreen.route)
+                            createUriFromView { url ->
+                                Firestore.updateAsync("$ORDER/$id", hashMapOf<String, Any>().apply {
+                                    put("invoiceUrl", url)
+                                })
+                                viewModels.sendMailOrder(id, url)
+                                RealTime.udapte(
+                                    "$NOTIFICATION/${authSignIn!!.UId}/${notiId.notiId}",
+                                    notiId.apply {
+                                        link = url
+                                    },
+                                    {},
+                                    {})
+
+                            }
+                            delay(1500) {
+                                nav.navigationTo(ClientScreen.BookingScreen.route)
+                                viewModels.loadingState.value = false
+                            }
+                        } else if (it == CallbackType.INFO) {
                             viewModels.loadingState.value = false
                         }
-                    } else if (it == CallbackType.INFO) {
-                        viewModels.loadingState.value = false
                     }
                 }
             }
+
+
         }
     }
 
@@ -218,8 +245,10 @@ private fun File.writeBitmap(bitmap: Bitmap, format: Bitmap.CompressFormat, qual
     }
 }
 
+val prePayment = mutableStateOf(0.0)
+
 @Composable
-fun BillBooking(salePrice: MutableState<Double>) {
+fun BillBooking(salePrice: MutableState<Double>, value: TourTime) {
     val adultPrice = remember {
         mutableStateOf(salePrice.value * viewModels.countAdult.value)
     }
@@ -227,17 +256,21 @@ fun BillBooking(salePrice: MutableState<Double>) {
         mutableStateOf(salePrice.value * 0.75f * viewModels.countChild.value)
     }
     val context = LocalContext.current
+
+
+    prePayment.value =
+        (childPrice.value + adultPrice.value) - ((adultPrice.value + childPrice.value) * percentDeposit)
     ViewParentContent(
         onBack = {}, modifier = Modifier
             .background(white)
-            .padding(2.dp)
-            .border(border = BorderStroke(width = 1.dp, color = black))
+            .fillMaxSize()
     ) {
         Column(
             Modifier
-                .padding(8.dp)
-                .fillMaxSize(), verticalArrangement = Arrangement.Top
+                .fillMaxSize()
+                .padding(8.dp), verticalArrangement = Arrangement.Top
         ) {
+
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -353,9 +386,9 @@ fun BillBooking(salePrice: MutableState<Double>) {
                 SpaceH(h = 3)
                 TextView(
                     text = context.getString(R.string.tour_time) + ": "
-                            + context.getString(R.string.from) + viewModels.currentTourTime.value?.startTime + ": " + context.getString(
+                            + context.getString(R.string.from) + value.startTime + ": " + context.getString(
                         R.string.to
-                    ) + viewModels.currentTourTime.value?.endTime,
+                    ) + value.endTime,
                     modifier = Modifier,
                     textSize = 12,
                     font = Font(R.font.poppins_regular)
@@ -383,516 +416,540 @@ fun BillBooking(salePrice: MutableState<Double>) {
                 )
             }
 
-            Column(
-                Modifier
+            Box(
+                modifier = Modifier
                     .fillMaxWidth()
-                    .wrapContentHeight()
                     .border(border = BorderStroke(width = 1.dp, color = black))
             ) {
-                Row(
-                    Modifier
-                        .fillMaxWidth(1f)
-                        .height(32.dp)
-                        .wrapContentHeight(), verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
+                Column {
+                    Row(
                         Modifier
-                            .weight(2f)
-                            .wrapContentHeight()) {
-                        TextView(
-                            text = context.getString(R.string.number),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            textSize = 11,
-                            font = Font(R.font.poppins_semibold)
+                            .fillMaxWidth(1f)
+                            .height(32.dp)
+                            .wrapContentHeight(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            Modifier
+                                .weight(2f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = context.getString(R.string.number),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                textSize = 11,
+                                font = Font(R.font.poppins_semibold)
+                            )
+                        }
+                        Spacer(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .background(black)
+                                .fillMaxHeight()
                         )
-                    }
-                    Spacer(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .background(black)
-                            .fillMaxHeight()
-                    )
-                    Box(
-                        Modifier
-                            .weight(4f)
-                            .wrapContentHeight()) {
-                        TextView(
-                            text = context.getString(R.string.content),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            textSize = 11,
-                            font = Font(R.font.poppins_semibold)
+                        Box(
+                            Modifier
+                                .weight(4f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = context.getString(R.string.content),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                textSize = 11,
+                                font = Font(R.font.poppins_semibold)
+                            )
+                        }
+                        Spacer(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .background(black)
+                                .fillMaxHeight()
                         )
-                    }
-                    Spacer(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .background(black)
-                            .fillMaxHeight()
-                    )
-                    Box(
-                        Modifier
-                            .weight(2f)
-                            .wrapContentHeight()) {
-                        TextView(
-                            text = context.getString(R.string.count),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            textSize = 11,
-                            font = Font(R.font.poppins_semibold)
+                        Box(
+                            Modifier
+                                .weight(2f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = context.getString(R.string.count),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                textSize = 11,
+                                font = Font(R.font.poppins_semibold)
+                            )
+                        }
+                        Spacer(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .background(black)
+                                .fillMaxHeight()
                         )
-                    }
-                    Spacer(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .background(black)
-                            .fillMaxHeight()
-                    )
-                    Box(
-                        Modifier
-                            .weight(3f)
-                            .wrapContentHeight()) {
-                        TextView(
-                            text = context.getString(R.string.price),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            textSize = 11,
-                            font = Font(R.font.poppins_semibold)
+                        Box(
+                            Modifier
+                                .weight(3f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = context.getString(R.string.price),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                textSize = 11,
+                                font = Font(R.font.poppins_semibold)
+                            )
+                        }
+                        Spacer(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .background(black)
+                                .fillMaxHeight()
                         )
-                    }
-                    Spacer(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .background(black)
-                            .fillMaxHeight()
-                    )
-                    Box(
-                        Modifier
-                            .weight(3f)
-                            .wrapContentHeight()) {
-                        TextView(
-                            text = context.getString(R.string.total_price),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            textSize = 11,
-                            font = Font(R.font.poppins_semibold)
-                        )
-                    }
+                        Box(
+                            Modifier
+                                .weight(3f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = context.getString(R.string.total_price),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                textSize = 11,
+                                font = Font(R.font.poppins_semibold)
+                            )
+                        }
 
 
-                }
-                // header
-                Spacer(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(black)
-                )
-                Row(
-                    Modifier
-                        .fillMaxWidth(1f)
-                        .height(32.dp)
-                        .wrapContentHeight(), verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
+                    }
+                    // header
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(black)
+                    )
+                    Row(
                         Modifier
-                            .weight(2f)
-                            .wrapContentHeight()) {
-                        TextView(
-                            text = "1",
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            textSize = 11,
-                            font = Font(R.font.poppins_regular)
+                            .fillMaxWidth(1f)
+                            .height(32.dp)
+                            .wrapContentHeight(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            Modifier
+                                .weight(2f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = "1",
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                textSize = 11,
+                                font = Font(R.font.poppins_regular)
+                            )
+                        }
+                        Spacer(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .background(black)
+                                .fillMaxHeight()
                         )
+                        Box(
+                            Modifier
+                                .weight(4f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = context.getString(R.string.adult),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                textSize = 11,
+                                font = Font(R.font.poppins_regular)
+                            )
+                        }
+                        Spacer(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .background(black)
+                                .fillMaxHeight()
+                        )
+                        Box(
+                            Modifier
+                                .weight(2f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = viewModels.countAdult.value.toString(),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                textSize = 11,
+                                font = Font(R.font.poppins_regular)
+                            )
+                        }
+                        Spacer(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .background(black)
+                                .fillMaxHeight()
+                        )
+                        Box(
+                            Modifier
+                                .weight(3f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = salePrice.value.toCurrency(),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                textSize = 11,
+                                font = Font(R.font.poppins_regular)
+                            )
+                        }
+                        Spacer(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .background(black)
+                                .fillMaxHeight()
+                        )
+                        Box(
+                            Modifier
+                                .weight(3f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = adultPrice.value.toCurrency(),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                textSize = 11,
+                                font = Font(R.font.poppins_regular)
+                            )
+                        }
+
+
                     }
                     Spacer(
                         modifier = Modifier
-                            .width(1.dp)
+                            .fillMaxWidth()
+                            .height(1.dp)
                             .background(black)
-                            .fillMaxHeight()
                     )
-                    Box(
+                    Row(
                         Modifier
-                            .weight(4f)
-                            .wrapContentHeight()) {
-                        TextView(
-                            text = context.getString(R.string.adult),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            textSize = 11,
-                            font = Font(R.font.poppins_regular)
+                            .fillMaxWidth(1f)
+                            .height(32.dp)
+                            .wrapContentHeight(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            Modifier
+                                .weight(2f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = "2",
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                textSize = 11,
+                                font = Font(R.font.poppins_regular)
+                            )
+                        }
+                        Spacer(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .background(black)
+                                .fillMaxHeight()
                         )
+                        Box(
+                            Modifier
+                                .weight(4f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = context.getString(R.string.child),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                textSize = 11,
+                                font = Font(R.font.poppins_regular)
+                            )
+                        }
+                        Spacer(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .background(black)
+                                .fillMaxHeight()
+                        )
+                        Box(
+                            Modifier
+                                .weight(2f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = viewModels.countChild.value.toString(),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                textSize = 11,
+                                font = Font(R.font.poppins_regular)
+                            )
+                        }
+                        Spacer(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .background(black)
+                                .fillMaxHeight()
+                        )
+                        Box(
+                            Modifier
+                                .weight(3f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = (salePrice.value * 0.75f).toCurrency(),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                textSize = 11,
+                                font = Font(R.font.poppins_regular)
+                            )
+                        }
+                        Spacer(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .background(black)
+                                .fillMaxHeight()
+                        )
+                        Box(
+                            Modifier
+                                .weight(3f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = childPrice.value.toCurrency(),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                textSize = 11,
+                                font = Font(R.font.poppins_semibold)
+                            )
+                        }
+
+
                     }
+
                     Spacer(
                         modifier = Modifier
-                            .width(1.dp)
+                            .fillMaxWidth()
+                            .height(1.dp)
                             .background(black)
-                            .fillMaxHeight()
-                    )
-                    Box(
-                        Modifier
-                            .weight(2f)
-                            .wrapContentHeight()) {
-                        TextView(
-                            text = viewModels.countAdult.value.toString(),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            textSize = 11,
-                            font = Font(R.font.poppins_regular)
-                        )
-                    }
-                    Spacer(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .background(black)
-                            .fillMaxHeight()
-                    )
-                    Box(
-                        Modifier
-                            .weight(3f)
-                            .wrapContentHeight()) {
-                        TextView(
-                            text = salePrice.value.toCurrency(),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            textSize = 11,
-                            font = Font(R.font.poppins_regular)
-                        )
-                    }
-                    Spacer(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .background(black)
-                            .fillMaxHeight()
-                    )
-                    Box(
-                        Modifier
-                            .weight(3f)
-                            .wrapContentHeight()) {
-                        TextView(
-                            text = adultPrice.value.toCurrency(),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            textSize = 11,
-                            font = Font(R.font.poppins_regular)
-                        )
-                    }
-
-
-                }
-                Spacer(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(black)
-                )
-                Row(
-                    Modifier
-                        .fillMaxWidth(1f)
-                        .height(32.dp)
-                        .wrapContentHeight(), verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        Modifier
-                            .weight(2f)
-                            .wrapContentHeight()) {
-                        TextView(
-                            text = "2",
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            textSize = 11,
-                            font = Font(R.font.poppins_regular)
-                        )
-                    }
-                    Spacer(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .background(black)
-                            .fillMaxHeight()
-                    )
-                    Box(
-                        Modifier
-                            .weight(4f)
-                            .wrapContentHeight()) {
-                        TextView(
-                            text = context.getString(R.string.child),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            textSize = 11,
-                            font = Font(R.font.poppins_regular)
-                        )
-                    }
-                    Spacer(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .background(black)
-                            .fillMaxHeight()
-                    )
-                    Box(
-                        Modifier
-                            .weight(2f)
-                            .wrapContentHeight()) {
-                        TextView(
-                            text = viewModels.countChild.value.toString(),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            textSize = 11,
-                            font = Font(R.font.poppins_regular)
-                        )
-                    }
-                    Spacer(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .background(black)
-                            .fillMaxHeight()
-                    )
-                    Box(
-                        Modifier
-                            .weight(3f)
-                            .wrapContentHeight()) {
-                        TextView(
-                            text = (salePrice.value * 0.75f).toCurrency(),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            textSize = 11,
-                            font = Font(R.font.poppins_regular)
-                        )
-                    }
-                    Spacer(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .background(black)
-                            .fillMaxHeight()
-                    )
-                    Box(
-                        Modifier
-                            .weight(3f)
-                            .wrapContentHeight()) {
-                        TextView(
-                            text = childPrice.value.toCurrency(),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            textSize = 11,
-                            font = Font(R.font.poppins_semibold)
-                        )
-                    }
-
-
-                }
-
-                Spacer(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(black)
-                )
-
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(6.dp)
-                ) {
-                    TextView(
-                        text = context.getString(R.string.service_includes),
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Start,
-                        textSize = 11,
-                        font = Font(R.font.poppins_semibold)
-                    )
-                    SpaceH(h = 2)
-                    TextView(
-                        text = context.getString(R.string.bill_include),
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Start,
-                        textSize = 11,
-                        font = Font(R.font.poppins_regular)
-                    )
-                    SpaceH(h = 2)
-                    TextView(
-                        text = context.getString(R.string.bill_include_other),
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Start,
-                        textSize = 11,
-                        font = Font(R.font.poppins_regular)
-                    )
-                    SpaceH(h = 6)
-                    TextView(
-                        text = context.getString(R.string.not_incluted),
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Start,
-                        textSize = 11,
-                        font = Font(R.font.poppins_semibold)
-                    )
-                    SpaceH(h = 2)
-                    TextView(
-                        text = context.getString(R.string.bill_un_include),
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Start,
-                        textSize = 11,
-                        font = Font(R.font.poppins_regular)
                     )
 
-                }
-                Spacer(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(black)
-                )
-                Row(
-                    Modifier
-                        .fillMaxWidth(1f)
-                        .height(32.dp)
-                        .padding(start = 6.dp)
-                        .wrapContentHeight(), verticalAlignment = Alignment.CenterVertically
-                ) {
-
-                    Box(
+                    Column(
                         Modifier
-                            .weight(11f)
-                            .wrapContentHeight()
+                            .fillMaxWidth()
+                            .padding(6.dp)
                     ) {
                         TextView(
-                            text = context.getString(R.string.total_price),
+                            text = context.getString(R.string.service_includes),
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Start,
                             textSize = 11,
                             font = Font(R.font.poppins_semibold)
                         )
-                    }
-                    Spacer(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .background(black)
-                            .fillMaxHeight()
-                    )
-                    Box(
-                        Modifier
-                            .weight(3f)
-                            .wrapContentHeight()
-                    ) {
+                        SpaceH(h = 2)
                         TextView(
-                            text = (adultPrice.value + childPrice.value).toCurrency(),
+                            text = context.getString(R.string.bill_include),
                             modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
+                            textAlign = TextAlign.Start,
                             textSize = 11,
                             font = Font(R.font.poppins_regular)
                         )
-                    }
-
-
-                }
-                Spacer(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(black)
-                )
-                Row(
-                    Modifier
-                        .fillMaxWidth(1f)
-                        .height(32.dp)
-                        .padding(start = 6.dp)
-                        .wrapContentHeight(), verticalAlignment = Alignment.CenterVertically
-                ) {
-
-                    Box(
-                        Modifier
-                            .weight(11f)
-                            .wrapContentHeight()
-                    ) {
+                        SpaceH(h = 2)
                         TextView(
-                            text = context.getString(R.string.deposit),
+                            text = context.getString(R.string.bill_include_other),
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Start,
+                            textSize = 11,
+                            font = Font(R.font.poppins_regular)
+                        )
+                        SpaceH(h = 6)
+                        TextView(
+                            text = context.getString(R.string.not_incluted),
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Start,
                             textSize = 11,
                             font = Font(R.font.poppins_semibold)
                         )
-                    }
-                    Spacer(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .background(black)
-                            .fillMaxHeight()
-                    )
-                    Box(
-                        Modifier
-                            .weight(3f)
-                            .wrapContentHeight()
-                    ) {
+                        SpaceH(h = 2)
                         TextView(
-                            text = ((adultPrice.value + childPrice.value) * percentDeposit).toCurrency(),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            textSize = 11,
-                            font = Font(R.font.poppins_regular)
-                        )
-                    }
-
-
-                }
-                Spacer(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(black)
-                )
-                Row(
-                    Modifier
-                        .fillMaxWidth(1f)
-                        .height(32.dp)
-                        .padding(start = 6.dp)
-                        .wrapContentHeight(), verticalAlignment = Alignment.CenterVertically
-                ) {
-
-                    Box(
-                        Modifier
-                            .weight(11f)
-                            .wrapContentHeight()
-                    ) {
-                        TextView(
-                            text = context.getString(R.string.pre_payment),
+                            text = context.getString(R.string.bill_un_include),
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Start,
                             textSize = 11,
-                            font = Font(R.font.poppins_semibold)
+                            font = Font(R.font.poppins_regular)
                         )
+
                     }
                     Spacer(
                         modifier = Modifier
-                            .width(1.dp)
+                            .fillMaxWidth()
+                            .height(1.dp)
                             .background(black)
-                            .fillMaxHeight()
                     )
-                    Box(
+                    Row(
                         Modifier
-                            .weight(3f)
-                            .wrapContentHeight()
+                            .fillMaxWidth(1f)
+                            .height(32.dp)
+                            .padding(start = 6.dp)
+                            .wrapContentHeight(), verticalAlignment = Alignment.CenterVertically
                     ) {
-                        TextView(
-                            text = ((childPrice.value + adultPrice.value) - ((adultPrice.value + childPrice.value) * percentDeposit)).toCurrency(),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            textSize = 11,
-                            font = Font(R.font.poppins_regular)
+
+                        Box(
+                            Modifier
+                                .weight(11f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = context.getString(R.string.total_price),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Start,
+                                textSize = 11,
+                                font = Font(R.font.poppins_semibold)
+                            )
+                        }
+                        Spacer(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .background(black)
+                                .fillMaxHeight()
                         )
+                        Box(
+                            Modifier
+                                .weight(3f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = (adultPrice.value + childPrice.value).toCurrency(),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                textSize = 11,
+                                font = Font(R.font.poppins_regular)
+                            )
+                        }
+
+
                     }
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(black)
+                    )
+                    Row(
+                        Modifier
+                            .fillMaxWidth(1f)
+                            .height(32.dp)
+                            .padding(start = 6.dp)
+                            .wrapContentHeight(), verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                        Box(
+                            Modifier
+                                .weight(11f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = context.getString(R.string.deposit),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Start,
+                                textSize = 11,
+                                font = Font(R.font.poppins_semibold)
+                            )
+                        }
+                        Spacer(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .background(black)
+                                .fillMaxHeight()
+                        )
+                        Box(
+                            Modifier
+                                .weight(3f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = ((adultPrice.value + childPrice.value) * percentDeposit).toCurrency(),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                textSize = 11,
+                                font = Font(R.font.poppins_regular)
+                            )
+                        }
 
 
+                    }
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(black)
+                    )
+                    Row(
+                        Modifier
+                            .fillMaxWidth(1f)
+                            .height(32.dp)
+                            .padding(start = 6.dp)
+                            .wrapContentHeight(), verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                        Box(
+                            Modifier
+                                .weight(11f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = context.getString(R.string.pre_payment),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Start,
+                                textSize = 11,
+                                font = Font(R.font.poppins_semibold)
+                            )
+                        }
+                        Spacer(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .background(black)
+                                .fillMaxHeight()
+                        )
+                        Box(
+                            Modifier
+                                .weight(3f)
+                                .wrapContentHeight()
+                        ) {
+                            TextView(
+                                text = ((childPrice.value + adultPrice.value) - ((adultPrice.value + childPrice.value) * percentDeposit)).toCurrency(),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                textSize = 11,
+                                font = Font(R.font.poppins_regular)
+                            )
+                        }
+
+
+                    }
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
+
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .wrapContentHeight(), horizontalArrangement = Arrangement.Absolute.Center
+                    .wrapContentHeight(),
+                horizontalArrangement = Arrangement.Center
             ) {
                 Spacer(modifier = Modifier.weight(0.2f))
                 Column(
                     Modifier
-                        .weight(1.3f), horizontalAlignment = Alignment.CenterHorizontally) {
+                        .wrapContentHeight()
+                        .background(gray)
+                        .weight(1.3f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     TextView(
                         text = context.getString(R.string.customer_name),
                         modifier = Modifier.fillMaxWidth(),
@@ -903,8 +960,8 @@ fun BillBooking(salePrice: MutableState<Double>) {
                 }
                 Spacer(modifier = Modifier.weight(0.2f))
                 Column(
-                    Modifier
-                        .weight(1.3f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Modifier.weight(1.3f), horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     TextView(
                         text = context.getString(R.string.artist),
                         modifier = Modifier.fillMaxWidth(),
@@ -923,8 +980,8 @@ fun BillBooking(salePrice: MutableState<Double>) {
             ) {
                 Spacer(modifier = Modifier.weight(0.2f))
                 Column(
-                    Modifier
-                        .weight(1.3f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Modifier.weight(1.3f), horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     TextView(
                         text = authSignIn!!.Name,
                         modifier = Modifier.fillMaxWidth(),
@@ -935,8 +992,8 @@ fun BillBooking(salePrice: MutableState<Double>) {
                 }
                 Spacer(modifier = Modifier.weight(0.2f))
                 Column(
-                    Modifier
-                        .weight(1.3f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Modifier.weight(1.3f), horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     TextView(
                         text = context.getString(R.string.artist),
                         modifier = Modifier.fillMaxWidth(),
@@ -948,7 +1005,6 @@ fun BillBooking(salePrice: MutableState<Double>) {
                 Spacer(modifier = Modifier.weight(0.2f))
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }

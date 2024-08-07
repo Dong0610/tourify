@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -51,10 +52,7 @@ import dong.datn.tourify.widget.onClick
 @Composable
 fun SettingScreen(nav: NavController, viewModels: AppViewModel) {
     val context = LocalContext.current
-    
-    val isDarkTheme = remember {
-        mutableStateOf(currentTheme == -1)
-    }
+
     ViewParent(onBack = {
         nav.navigationTo(ClientScreen.ProfileScreen.route)
     }) {
@@ -139,6 +137,47 @@ fun SettingScreen(nav: NavController, viewModels: AppViewModel) {
                 SwitchNotificationValue()
 
             }
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(12.dp)
+            )
+            Box {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    TextView(
+                        context.getString(R.string.language),
+                        Modifier
+                            .wrapContentSize(),
+                        textSize = 16,
+                        textColor(context),
+                        font = Font(R.font.poppins_regular),
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    IconView(
+                        item = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                        modifier = Modifier
+                    ) {
+
+                    }
+
+                }
+                Box(
+                    Modifier
+                        .matchParentSize()
+                        .onClick { nav.navigationTo(ClientScreen.LanguageScreen.route) }) {
+
+                }
+            }
+
 
 
         }

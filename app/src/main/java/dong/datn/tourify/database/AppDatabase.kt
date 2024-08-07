@@ -12,9 +12,10 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 
-@Database(entities = [LoveItem::class], version = 1)
+@Database(entities = [LoveItem::class,OrderTime::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun loveDao(): LoveDao
+    abstract fun orderTimeDao(): OrderTimeDao
 
     companion object {
         @Volatile private var instance: AppDatabase? = null
@@ -27,7 +28,7 @@ abstract class AppDatabase : RoomDatabase() {
         private fun buildDatabase(context: Context) =
             Room.databaseBuilder(
                 context.applicationContext,
-                AppDatabase::class.java, "app_database"
+                AppDatabase::class.java, "TourifyDb"
             ).build()
     }
 }

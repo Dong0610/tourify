@@ -10,6 +10,7 @@ data class Users(
     var Birthday: String = "",
     var CreateTime: String = "",
     var Image: String = "",
+    var Gender:String= "",
     var Token: String = "",
     var Role: String = "",
     var LoginType: String = "Account",

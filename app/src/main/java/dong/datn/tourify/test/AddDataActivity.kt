@@ -12,17 +12,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.google.firebase.database.FirebaseDatabase
 import dong.datn.tourify.app.viewModels
+import dong.datn.tourify.firebase.RealTime
 import dong.datn.tourify.model.createFamousPlaces
 import dong.datn.tourify.model.generateSales
 import dong.datn.tourify.ui.theme.TourifyTheme
 import dong.datn.tourify.utils.SALES
+import dong.datn.tourify.utils.SCHEDULE
+import dong.datn.tourify.utils.SERVICE
 import dong.datn.tourify.utils.SpaceH
 import dong.datn.tourify.utils.TOUR
 import dong.datn.tourify.widget.AppButton
 import dong.datn.tourify.widget.VerScrollView
-import dong.duan.ecommerce.library.showToast
-import dong.duan.travelapp.model.RandomTour
+import dong.duan.travelapp.model.dataRandom
+import dong.duan.travelapp.model.listSchedule
+import dong.duan.travelapp.model.listService
 
 class AddDataActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,6 +67,16 @@ fun DefaultPreview(padding: PaddingValues) {
                     Log.d("Put", "put: ${it}")
                 }
             }
+            SpaceH(h = 12)
+            AppButton(text = "Schedule", modifier = Modifier, isEnable = true) {
+
+                putScheduleData()
+            }
+            SpaceH(h = 12)
+            AppButton(text = "Service", modifier = Modifier, isEnable = true) {
+
+                putServiceData()
+            }
         }
     }
 }
@@ -80,13 +95,38 @@ fun putSaleData(function: (String) -> Int) {
 
 fun putTourData(function: (String) -> Unit) {
 
-    RandomTour.dataRandom().forEach { place ->
+    dataRandom().forEach { place ->
         viewModels.firestore.collection("${TOUR}")
             .document("${place.tourID}")
             .set(place).addOnSuccessListener {
                 function.invoke(place.tourID)
             }.addOnFailureListener {
                 Log.d("Put", "error: $it")
+            }
+    }
+}
+
+
+fun putScheduleData() {
+    listSchedule().forEach {
+        FirebaseDatabase.getInstance()
+            .getReference("$SCHEDULE")
+            .child(it.Id)
+            .setValue(it)
+            .addOnSuccessListener {
+                Log.d("Put", "Success")
+            }
+    }
+}
+
+fun putServiceData() {
+    listService().forEach {
+        FirebaseDatabase.getInstance()
+            .getReference("$SERVICE")
+            .child(it.id)
+            .setValue(it)
+            .addOnSuccessListener {
+                Log.d("Put", "Success")
             }
     }
 }

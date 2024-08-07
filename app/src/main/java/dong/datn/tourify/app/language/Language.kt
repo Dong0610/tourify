@@ -25,9 +25,18 @@ fun getLangArr(context: Context): MutableList<Language> {
         add(
             Language(
                 1,
+                R.drawable.ic_flag_vn,
+                context.getString(R.string.language_vietnam),
+                "vi",false
+            )
+        )
+
+        add(
+            Language(
+                1,
                 R.drawable.ic_lang_hi,
                 context.getString(R.string.language_hindi),
-                "hi",true
+                "hi",false
             )
         )
         add(

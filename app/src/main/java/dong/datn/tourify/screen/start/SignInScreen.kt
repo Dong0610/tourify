@@ -28,6 +28,7 @@ import androidx.navigation.NavHostController
 import dong.datn.tourify.R
 import dong.datn.tourify.app.AppViewModel
 import dong.datn.tourify.app.authSignIn
+import dong.datn.tourify.firebase.NotificationHelper
 import dong.datn.tourify.screen.client.MainActivity
 import dong.datn.tourify.screen.staff.StaffActivity
 import dong.datn.tourify.ui.theme.appColor
@@ -160,6 +161,7 @@ fun SignInScreen(navController: NavHostController, viewModels: AppViewModel, onF
                                 email.value, password.value
                             ) { state ->
                                 if (state == 1) {
+                                    NotificationHelper(context).sendNotificationLogin()
                                     if (authSignIn!!.Role == "Staff") {
                                         context.startActivity(
                                             Intent(

@@ -80,23 +80,13 @@ fun LanguageScreen(navController: NavHostController, onBack: () -> Unit) {
                 ) {
                     Text(
                         text = "Language",
-                        fontSize = 24.sp,
+                        fontSize = 20.sp,
                         color = textColor(context),
                         fontFamily = FontFamily(
                             Font(
-                                R.font.poppins_bold
+                                R.font.poppins_semibold
                             )
                         ),
-                        modifier = Modifier.clickable {
-                            if (currentTheme == -1) {
-                                currentTheme = 1
-                                changeTheme(1, context)
-                            } else {
-                                currentTheme = -1
-                                changeTheme(-1, context)
-                            }
-
-                        }
                     )
                     IconView(modifier = Modifier, icon = Icons.Rounded.Check) {
                         LanguageUtil.changeLang(selectedLanguage.value.code, context)

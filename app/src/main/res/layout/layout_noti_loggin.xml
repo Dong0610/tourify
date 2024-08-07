@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:background="@drawable/bg_notification_view"
+    android:orientation="horizontal"
+    android:padding="16dp">
+
+    <ImageView
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:src="@drawable/img_user" />
+
+    <LinearLayout
+        android:layout_marginStart="12.dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:includeFontPadding="false"
+            android:fontFamily="@font/poppins_semibold"
+            android:textColor="@color/com_facebook_blue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/notification" />
+
+        <TextView
+            android:includeFontPadding="false"
+            android:fontFamily="@font/poppins_regular"
+            android:layout_marginTop="12.dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="@string/login_success" />
+    </LinearLayout>
+
+</LinearLayout>
